@@ -205,16 +205,26 @@ export const milestoneService = {
   // Advanced - Get next milestone target
   getNextMilestone: async (streakId, currentStreakDays) => {
     try {
-      const { data, error } = await supabase
-        .from('milestones')
-        .select('*')
-        .eq('streak_id', streakId)
-        .eq('is_achieved', false)
-        .order('level', { ascending: true })
-        .limit(1)
-        .single();
+      let data;
+      
+      if (!isSupabaseConfigured) {
+        const milestones = getMilestonesFromLocal()
+          .filter(m => m.streak_id === streakId && !m.is_achieved)
+          .sort((a, b) => a.level - b.level);
+        data = milestones.length > 0 ? milestones[0] : null;
+      } else {
+        const { data: milData, error } = await supabase
+          .from('milestones')
+          .select('*')
+          .eq('streak_id', streakId)
+          .eq('is_achieved', false)
+          .order('level', { ascending: true })
+          .limit(1)
+          .single();
 
-      if (error && error.code !== 'PGRST116') throw error;
+        if (error && error.code !== 'PGRST116') throw error;
+        data = milData;
+      }
 
       if (!data) {
         return {

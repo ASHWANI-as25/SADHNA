@@ -3,29 +3,56 @@
  * AI-based habit analytics and personalized suggestions
  */
 
-import { supabase } from './supabase';
+import { supabase, isSupabaseConfigured } from './supabase';
 import { checkinService } from './checkinService';
+import { streakManagementService } from './streakManagementService';
+
+// Local storage helpers
+const getStreaksFromLocal = () => {
+  const data = localStorage.getItem('app_streaks');
+  return data ? JSON.parse(data) : [];
+};
+
+const getCheckinsFromLocal = () => {
+  const data = localStorage.getItem('app_checkins');
+  return data ? JSON.parse(data) : [];
+};
 
 export const habitPredictionService = {
   // Analyze habit success probability
   predictHabitSuccess: async (streakId, userId) => {
     try {
-      // Get streak data
-      const { data: streak, error: streakError } = await supabase
-        .from('streaks')
-        .select('*')
-        .eq('id', streakId)
-        .single();
+      let streak, checkins;
 
-      if (streakError) throw streakError;
+      if (!isSupabaseConfigured) {
+        // Use localStorage fallback
+        const streaks = getStreaksFromLocal();
+        streak = streaks.find(s => s.id === streakId);
+        checkins = getCheckinsFromLocal().filter(c => c.streak_id === streakId);
+        
+        if (!streak) {
+          return { success: true, prediction: null };
+        }
+      } else {
+        // Get streak data
+        const { data: streakData, error: streakError } = await supabase
+          .from('streaks')
+          .select('*')
+          .eq('id', streakId)
+          .single();
 
-      // Get checkin stats
-      const { data: checkins, error: checkinError } = await supabase
-        .from('checkins')
-        .select('*')
-        .eq('streak_id', streakId);
+        if (streakError) throw streakError;
+        streak = streakData;
 
-      if (checkinError) throw checkinError;
+        // Get checkin stats
+        const { data: checkinData, error: checkinError } = await supabase
+          .from('checkins')
+          .select('*')
+          .eq('streak_id', streakId);
+
+        if (checkinError) throw checkinError;
+        checkins = checkinData;
+      }
 
       // Calculate metrics
       const totalCheckins = checkins.length;
