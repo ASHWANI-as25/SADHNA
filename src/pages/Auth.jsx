@@ -462,10 +462,204 @@ const Auth = () => {
           </div>
 
           {/* Mobile - Auth Form */}
-          <div className="lg:hidden w-full max-w-lg flex flex-col items-center gap-8">
+          <div className="lg:hidden w-full flex flex-col items-center justify-center px-4 py-8">
             {/* Auth Card - Mobile */}
-            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-8 hover:border-white/40 transition-all shadow-xl shadow-red-500/10 hover:shadow-red-500/20 relative w-full">
-              {/* Mobile version of same form... */}
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 w-full max-w-sm">
+              {/* Tab Switcher */}
+              <div className="flex gap-2 mb-6 bg-white/5 p-1.5 rounded-lg border border-white/10">
+                <button
+                  onClick={() => { setIsLogin(true); setError(''); setSuccess(''); }}
+                  className={`flex-1 py-2 px-3 rounded-md font-semibold text-xs transition-all duration-300 ${
+                    isLogin
+                      ? 'bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-lg shadow-red-500/50'
+                      : 'text-gray-400 hover:text-gray-200'
+                  }`}
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => { setIsLogin(false); setError(''); setSuccess(''); }}
+                  className={`flex-1 py-2 px-3 rounded-md font-semibold text-xs transition-all duration-300 ${
+                    !isLogin
+                      ? 'bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-lg shadow-red-500/50'
+                      : 'text-gray-400 hover:text-gray-200'
+                  }`}
+                >
+                  Sign Up
+                </button>
+              </div>
+
+              {/* Form Heading */}
+              <h2 className="text-lg font-bold mb-1 text-white">
+                {isLogin ? 'Welcome Back' : 'Join SADHNA'}
+              </h2>
+              <p className="text-xs text-gray-400 mb-4">
+                {isLogin ? 'Continue your journey to consistency' : 'Start building unstoppable habits'}
+              </p>
+
+              {/* Error Message */}
+              {error && (
+                <div className="bg-red-500/15 border border-red-500/50 rounded-xl p-3 mb-3 text-red-200 text-xs flex items-start gap-2 animate-shake">
+                  <span className="text-sm mt-0.5">⚠️</span>
+                  <span className="flex-1">{error}</span>
+                </div>
+              )}
+
+              {/* Success Message */}
+              {success && (
+                <div className="bg-green-500/15 border border-green-500/50 rounded-xl p-3 mb-3 text-green-200 text-xs flex items-start gap-2 animate-pulse">
+                  <CheckCircle2 size={14} className="mt-0.5 flex-shrink-0" />
+                  <span className="flex-1">{success}</span>
+                </div>
+              )}
+
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="space-y-3">
+                {/* Full Name (Signup only) */}
+                {!isLogin && (
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5 text-gray-300">Full Name</label>
+                    <div className="relative group">
+                      <User size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-red-400 transition-colors z-10" />
+                      <input
+                        type="text"
+                        name="fullName"
+                        value={formData.fullName}
+                        onChange={handleChange}
+                        onFocus={() => setFocusedField('fullName')}
+                        onBlur={() => setFocusedField('')}
+                        placeholder="Enter your full name"
+                        className="w-full bg-white/10 border border-white/20 rounded-lg pl-12 pr-3 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-red-500 focus:bg-white/20 transition-all text-sm"
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Email */}
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5 text-gray-300">Email Address</label>
+                  <div className="relative group">
+                    <Mail size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-red-400 transition-colors z-10" />
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      onFocus={() => setFocusedField('email')}
+                      onBlur={() => setFocusedField('')}
+                      placeholder="you@example.com"
+                      className="w-full bg-white/10 border border-white/20 rounded-lg pl-12 pr-3 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-red-500 focus:bg-white/20 transition-all text-sm"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-gray-300">Password</label>
+                    {isLogin && (
+                      <a href="#" className="text-xs text-red-400 hover:text-red-300 transition-colors font-semibold">Forgot?</a>
+                    )}
+                  </div>
+                  <div className="relative group">
+                    <Lock size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-red-400 transition-colors z-10" />
+                    <input
+                      type="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      onFocus={() => setFocusedField('password')}
+                      onBlur={() => setFocusedField('')}
+                      placeholder="••••••••"
+                      className="w-full bg-white/10 border border-white/20 rounded-lg pl-12 pr-3 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-red-500 focus:bg-white/20 transition-all text-sm"
+                      required
+                      minLength={6}
+                    />
+                  </div>
+                  {!isLogin && (
+                    <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                      <span className="w-1 h-1 bg-gray-600 rounded-full"></span>
+                      Min 8 chars: uppercase, lowercase, numbers
+                    </p>
+                  )}
+                </div>
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all mt-4 shadow-lg shadow-red-500/30 hover:shadow-red-500/50 text-sm disabled:shadow-none text-base"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" />
+                      <span>Processing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-bold">{isLogin ? 'Sign In' : 'Create Account'}</span>
+                      <ArrowRight size={16} />
+                    </>
+                  )}
+                </button>
+
+                {/* Divider */}
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-gray-600"></div>
+                  </div>
+                  <div className="relative flex justify-center">
+                    <span className="px-3 bg-gradient-to-br from-red-950 via-black to-slate-950 text-xs text-gray-400">Or continue with</span>
+                  </div>
+                </div>
+
+                {/* OAuth Sign-In Buttons */}
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleOAuthSignIn('google')}
+                    disabled={loading}
+                    className="flex items-center justify-center py-2.5 px-2 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 hover:border-red-500/50 transition-all disabled:opacity-50 text-white hover:text-red-400 hover:shadow-lg hover:shadow-red-500/20 group"
+                    title="Sign in with Google"
+                  >
+                    <FaGoogle size={18} className="group-hover:scale-110 transition-transform" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOAuthSignIn('github')}
+                    disabled={loading}
+                    className="flex items-center justify-center py-2.5 px-2 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 hover:border-red-500/50 transition-all disabled:opacity-50 text-white hover:text-red-400 hover:shadow-lg hover:shadow-red-500/20 group"
+                    title="Sign in with GitHub"
+                  >
+                    <FaGithub size={18} className="group-hover:scale-110 transition-transform" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOAuthSignIn('linkedin')}
+                    disabled={loading}
+                    className="flex items-center justify-center py-2.5 px-2 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 hover:border-red-500/50 transition-all disabled:opacity-50 text-white hover:text-red-400 hover:shadow-lg hover:shadow-red-500/20 group"
+                    title="Sign in with LinkedIn"
+                  >
+                    <FaLinkedin size={18} className="group-hover:scale-110 transition-transform" />
+                  </button>
+                </div>
+
+                {/* Footer Text */}
+                <p className="text-xs text-gray-400 text-center mt-4">
+                  {isLogin ? "Don't have an account? " : "Already have an account? "}
+                  <button
+                    type="button"
+                    onClick={() => { setIsLogin(!isLogin); setError(''); setSuccess(''); }}
+                    className="text-red-400 hover:text-red-300 font-semibold transition-colors"
+                  >
+                    {isLogin ? 'Sign up' : 'Sign in'}
+                  </button>
+                </p>
+              </form>
             </div>
           </div>
         </div>
