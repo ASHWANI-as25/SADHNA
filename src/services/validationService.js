@@ -20,10 +20,23 @@ export const validate = {
     if (!value || value.trim() === '') {
       return null;
     }
+    
+    // Simple check - just needs to start with http:// or https:// or www.
+    const urlRegex = /^(https?:\/\/)|(www\.)|(\w+\.\w+)/;
+    if (!urlRegex.test(value.trim())) {
+      return 'Please enter a valid URL (e.g., https://example.com)';
+    }
+    
+    // Try to parse as URL for additional validation
     try {
-      new URL(value);
+      const urlString = value.includes('://') ? value : `https://${value}`;
+      new URL(urlString);
       return null;
     } catch {
+      // If it looks like a URL pattern but fails strict validation, still allow it
+      if (/^[\w\-]+(\.[\w\-]+)+/.test(value.trim())) {
+        return null;
+      }
       return 'Please enter a valid URL (e.g., https://example.com)';
     }
   },
