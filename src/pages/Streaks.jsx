@@ -350,7 +350,7 @@ const Streaks = () => {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
-            className="bg-gradient-to-br from-sadhna-navy to-sadhna-black border border-energy-coral/30 rounded-2xl p-8 max-w-2xl w-full my-8"
+            className="bg-gradient-to-br from-sadhna-navy to-sadhna-black border border-energy-coral/30 rounded-2xl p-6 md:p-8 w-full max-w-md md:max-w-2xl lg:max-w-3xl my-8 max-h-[90vh] overflow-y-auto"
           >
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
@@ -385,10 +385,10 @@ const Streaks = () => {
 
               {/* Category Selection */}
               <div>
-                <label className="block text-sm font-bold text-slate-300 mb-3">
+                <label className="block text-sm font-bold text-slate-300 mb-4">
                   📋 Select Category
                 </label>
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
                   {CATEGORIES.map((cat) => (
                     <motion.button
                       key={cat.value}
@@ -397,14 +397,15 @@ const Streaks = () => {
                       onClick={() =>
                         setNewStreakData({ ...newStreakData, category: cat.value })
                       }
-                      className={`p-3 rounded-lg font-semibold transition-all text-sm ${
+                      className={`p-3 md:p-4 rounded-lg font-semibold transition-all text-sm whitespace-nowrap ${
                         newStreakData.category === cat.value
                           ? 'bg-gradient-to-br from-cyan-500 to-blue-500 text-white shadow-lg shadow-cyan-500/50'
                           : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                       }`}
                     >
-                      <span className="text-lg mr-1">{cat.emoji}</span>
-                      {cat.label}
+                      <span className="text-base md:text-lg mr-1">{cat.emoji}</span>
+                      <span className="hidden sm:inline">{cat.label}</span>
+                      <span className="sm:hidden text-xs">{cat.label.split(' ')[0]}</span>
                     </motion.button>
                   ))}
                 </div>
