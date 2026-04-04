@@ -68,20 +68,27 @@ const StreakCard = ({ streak, userId, onUpdate }) => {
     );
 
     if (result.success) {
+      // Get updated consecutive days
+      const consecutiveDaysResult = await checkinService.getConsecutiveDays(streak.id);
+      const consecutiveDays = consecutiveDaysResult.consecutiveDays || 0;
+      
       // Update streak counters
-      const { consecutiveDays } = await checkinService.getConsecutiveDays(streak.id);
       await streakManagementService.updateStreakStats(
         streak.id,
         consecutiveDays,
-        Math.max(streak.best_streak, consecutiveDays),
-        streak.total_checkins + 1
+        Math.max(streak.best_streak || 0, consecutiveDays),
+        (streak.total_checkins || 0) + 1
       );
 
       // Check for milestone achievements
       await milestoneService.checkAndAwardMilestones(streak.id, consecutiveDays);
 
       setCheckedInToday(true);
-      onUpdate();
+      
+      // Reload data with slight delay to ensure localStorage is updated
+      setTimeout(() => {
+        onUpdate();
+      }, 100);
     }
   }, [streak.id, streak.best_streak, streak.total_checkins, userId, onUpdate]);
 

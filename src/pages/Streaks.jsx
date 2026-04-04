@@ -78,6 +78,8 @@ const Streaks = () => {
       const streaksResult = await streakManagementService.getUserStreaks(user.id);
       if (streaksResult.success) {
         setStreaks(streaksResult.data);
+        // Force re-render by creating new array reference
+        setStreaks(prev => [...prev]);
       }
 
       // Load statistics
