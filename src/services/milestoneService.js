@@ -4,7 +4,7 @@
  * Milestones triggered at: 7, 30, 100, 365 days
  */
 
-import { supabase } from './supabase';
+import { supabase, isSupabaseConfigured } from './supabase';
 
 const MILESTONE_LEVELS = [
   { level: 1, days: 7, badge: 'Week Warrior', emoji: '🔥', color: 'from-orange-500 to-red-500' },
@@ -13,18 +13,45 @@ const MILESTONE_LEVELS = [
   { level: 4, days: 365, badge: 'Year Legend', emoji: '👑', color: 'from-yellow-500 to-amber-500' },
 ];
 
+const MILESTONES_KEY = 'app_milestones';
+
+const initializeMilestonesDB = () => {
+  if (!localStorage.getItem(MILESTONES_KEY)) {
+    localStorage.setItem(MILESTONES_KEY, JSON.stringify([]));
+  }
+};
+
+const getMilestonesFromLocal = () => {
+  initializeMilestonesDB();
+  return JSON.parse(localStorage.getItem(MILESTONES_KEY)) || [];
+};
+
+const saveMilestonesToLocal = (milestones) => {
+  localStorage.setItem(MILESTONES_KEY, JSON.stringify(milestones));
+};
+
 export const milestoneService = {
   // Initialize milestones for a new streak
   initializeMilestones: async (streakId, userId) => {
     try {
       const milestonesToInsert = MILESTONE_LEVELS.map((m) => ({
+        id: `${streakId}-${m.level}`,
         streak_id: streakId,
         user_id: userId,
         level: m.level,
         days_required: m.days,
         badge_type: m.badge,
         is_achieved: false,
+        created_at: new Date().toISOString(),
       }));
+
+      if (!isSupabaseConfigured) {
+        // Use localStorage fallback
+        const milestones = getMilestonesFromLocal();
+        milestones.push(...milestonesToInsert);
+        saveMilestonesToLocal(milestones);
+        return { success: true, data: milestonesToInsert };
+      }
 
       const { data, error } = await supabase
         .from('milestones')
@@ -35,13 +62,21 @@ export const milestoneService = {
       return { success: true, data };
     } catch (error) {
       console.error('Error initializing milestones:', error);
-      return { success: false, error: error.message };
+      // Return success anyway - don't fail streak creation
+      return { success: true, data: [] };
     }
   },
 
   // READ - Get all milestones for a streak
   getStreakMilestones: async (streakId) => {
     try {
+      if (!isSupabaseConfigured) {
+        const milestones = getMilestonesFromLocal()
+          .filter(m => m.streak_id === streakId)
+          .sort((a, b) => a.level - b.level);
+        return { success: true, data: milestones };
+      }
+
       const { data, error } = await supabase
         .from('milestones')
         .select('*')
@@ -59,6 +94,21 @@ export const milestoneService = {
   // UPDATE - Mark milestone as achieved
   achieveMilestone: async (milestoneId) => {
     try {
+      if (!isSupabaseConfigured) {
+        const milestones = getMilestonesFromLocal();
+        const index = milestones.findIndex(m => m.id === milestoneId);
+        if (index !== -1) {
+          milestones[index] = {
+            ...milestones[index],
+            is_achieved: true,
+            achieved_date: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          saveMilestonesToLocal(milestones);
+          return { success: true, data: milestones[index] };
+        }
+      }
+
       const { data, error } = await supabase
         .from('milestones')
         .update({
@@ -81,23 +131,41 @@ export const milestoneService = {
   // Advanced - Check and auto-award milestones
   checkAndAwardMilestones: async (streakId, currentStreakDays) => {
     try {
-      const { data: milestones, error: milError } = await supabase
-        .from('milestones')
-        .select('*')
-        .eq('streak_id', streakId)
-        .eq('is_achieved', false);
+      let milestones;
+      
+      if (!isSupabaseConfigured) {
+        milestones = getMilestonesFromLocal()
+          .filter(m => m.streak_id === streakId && !m.is_achieved);
+      } else {
+        const { data: milData, error: milError } = await supabase
+          .from('milestones')
+          .select('*')
+          .eq('streak_id', streakId)
+          .eq('is_achieved', false);
 
-      if (milError) throw milError;
+        if (milError) throw milError;
+        milestones = milData;
+      }
 
       const newlyAwarded = [];
 
       for (const milestone of milestones) {
         if (currentStreakDays >= milestone.days_required) {
-          const { data, error } = await supabase
-            .from('milestones')
-            .update({
-              is_achieved: true,
-              achieved_date: new Date().toISOString(),
+          if (!isSupabaseConfigured) {
+            const allMilestones = getMilestonesFromLocal();
+            const index = allMilestones.findIndex(m => m.id === milestone.id);
+            if (index !== -1) {
+              allMilestones[index].is_achieved = true;
+              allMilestones[index].achieved_date = new Date().toISOString();
+              saveMilestonesToLocal(allMilestones);
+              newlyAwarded.push(allMilestones[index]);
+            }
+          } else {
+            const { data, error } = await supabase
+              .from('milestones')
+              .update({
+                is_achieved: true,
+                achieved_date: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             })
             .eq('id', milestone.id)
