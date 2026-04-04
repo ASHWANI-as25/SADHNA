@@ -1,0 +1,201 @@
+/* Daily Todos Page Styles */
+
+.daily-todos-container {
+  position: relative;
+}
+
+/* Todo Card Animations */
+.todo-item {
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Checkbox Animation */
+.todo-checkbox {
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.todo-checkbox:hover {
+  transform: scale(1.1);
+}
+
+.todo-checkbox:active {
+  transform: scale(0.95);
+}
+
+/* Todo Title Animation */
+.todo-title {
+  transition: all 0.3s ease;
+}
+
+.todo-completed .todo-title {
+  color: rgba(148, 163, 184, 0.6);
+}
+
+/* Priority Badge */
+.priority-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  display: inline-block;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.priority-badge:hover {
+  transform: scale(1.05);
+}
+
+/* High Priority */
+.priority-high {
+  background: linear-gradient(to right, rgb(239, 68, 68), rgb(236, 72, 153));
+  color: white;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* Medium Priority */
+.priority-medium {
+  background: linear-gradient(to right, rgb(217, 119, 6), rgb(194, 65, 12));
+  color: white;
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3);
+}
+
+/* Low Priority */
+.priority-low {
+  background: linear-gradient(to right, rgb(16, 185, 129), rgb(20, 184, 166));
+  color: white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* Stats Cards */
+.stat-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  will-change: transform;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.empty-state-icon {
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto 1rem;
+  opacity: 0.5;
+}
+
+/* Modal Styles */
+.todo-modal {
+  animation: modalSlideUp 0.3s ease-out;
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Input Focus */
+.todo-input:focus,
+.todo-textarea:focus,
+.todo-select:focus {
+  outline: none;
+  border-color: rgb(34, 211, 238);
+  ring: 2px;
+  ring-color: rgba(34, 211, 238, 0.3);
+}
+
+/* Responsive Grid */
+@media (max-width: 768px) {
+  .stat-card {
+    padding: 1rem;
+  }
+
+  .priority-badge {
+    font-size: 0.65rem;
+  }
+
+  .todo-item {
+    padding: 1rem;
+  }
+}
+
+/* Performance Optimization */
+.todo-container {
+  contain: layout style paint;
+}
+
+/* Smooth Transitions */
+* {
+  transition-property: color, background-color, border-color, box-shadow;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.todo-item *,
+.stat-card * {
+  transition-duration: 200ms;
+}
+
+/* Loading Animation */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner {
+  animation: spin 2s linear infinite;
+}
+
+/* Completion Progress Bar */
+.progress-bar {
+  height: 4px;
+  background: rgba(148, 163, 184, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 1rem;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(to right, rgb(34, 211, 238), rgb(59, 130, 246));
+  transition: width 0.5s ease;
+  border-radius: 2px;
+}
+
+/* Delete Button Animation */
+.delete-btn {
+  transition: all 0.2s ease;
+}
+
+.delete-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: rgb(239, 68, 68);
+}
+
+.delete-btn:active {
+  transform: scale(0.9);
+}

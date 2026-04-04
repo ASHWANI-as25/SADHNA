@@ -1,0 +1,617 @@
+/* 
+ * Cinematic Design System
+ * Ultra-premium UI/UX with immersive space experience
+ * 
+ * Philosophy: Apple minimalism + SpaceX cinematic realism
+ * Mood: Calm but powerful, infinite depth, meditation in space
+ */
+
+/* ================================================
+   ROOT & DESIGN TOKENS (CINEMATIC)
+   ================================================ */
+
+:root {
+  /* Colors - Deep Space Palette */
+  --color-black: #000000;
+  --color-black-deep: #0a0a0a;
+  --color-navy: #05070D;
+  --color-navy-light: #0F1424;
+  --color-white: #FFFFFF;
+  --color-white-secondary: #F5F5F5;
+  --color-grey-light: #E8E8E8;
+  --color-grey-mid: #A0A0A0;
+  --color-grey-dark: #4A4A4A;
+  
+  /* Gradients - Cinematic */
+  --gradient-primary: linear-gradient(135deg, #7C3AED 0%, #3B82F6 100%);
+  --gradient-accent: linear-gradient(135deg, #3B82F6 0%, #06B6D4 100%);
+  --gradient-glow: linear-gradient(135deg, #7C3AED 0%, #DB2777 50%, #EA580C 100%);
+  --gradient-space: linear-gradient(from rgba(70, 20, 150, 0.1) to rgba(0, 0, 0, 0));
+  
+  /* Glows - Subtle & Atmospheric */
+  --glow-subtle: 0 0 8px rgba(124, 58, 237, 0.2);
+  --glow-soft: 0 0 16px rgba(124, 58, 237, 0.25);
+  --glow-medium: 0 0 24px rgba(124, 58, 237, 0.3);
+  --glow-strong: 0 0 32px rgba(124, 58, 237, 0.4);
+  --glow-focus: 0 0 40px rgba(124, 58, 237, 0.5);
+  
+  /* Shadows - Depth */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.8);
+  --shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.9);
+  
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  --spacing-3xl: 64px;
+  
+  /* Typography */
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  --font-mono: 'SF Mono', 'Monaco', 'IBM Plex Mono', monospace;
+  
+  /* Z-index Stack */
+  --z-starfield: 1;
+  --z-background: 5;
+  --z-content: 10;
+  --z-overlay: 100;
+  --z-modal: 1000;
+}
+
+/* ================================================
+   RESET & GLOBAL BASE
+   ================================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--color-black);
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--color-black);
+  color: var(--color-white);
+  line-height: 1.6;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ================================================
+   APP CONTAINER & LAYOUT
+   ================================================ */
+
+.app-container {
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  background: var(--color-black);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Starfield is positioned absolutely behind everything */
+.app-container::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--color-black);
+  z-index: var(--z-starfield);
+  pointer-events: none;
+}
+
+/* Sidebar */
+.sidebar {
+  position: relative;
+  z-index: var(--z-content);
+  flex-shrink: 0;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  background: rgba(10, 10, 10, 0.5);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Main Content Wrapper */
+main.main-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  z-index: var(--z-content);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  
+  /* Custom scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 58, 237, 0.3) transparent;
+}
+
+main.main-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+main.main-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+main.main-content::-webkit-scrollbar-thumb {
+  background-color: rgba(124, 58, 237, 0.3);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+main.main-content::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(124, 58, 237, 0.5);
+}
+
+/* Hero Section - Content Spacing */
+.hero-section {
+  padding: 48px 64px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* ================================================
+   TYPOGRAPHY
+   ================================================ */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family);
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: var(--spacing-lg);
+}
+
+h1 {
+  font-size: clamp(32px, 8vw, 48px);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--color-white);
+}
+
+h2 {
+  font-size: clamp(24px, 6vw, 32px);
+  font-weight: 600;
+  letter-spacing: -0.25px;
+  color: var(--color-white);
+}
+
+h3 {
+  font-size: clamp(18px, 4vw, 24px);
+  font-weight: 500;
+  letter-spacing: 0px;
+  color: var(--color-white);
+}
+
+p {
+  font-size: 16px;
+  color: var(--color-grey-mid);
+  line-height: 1.6;
+}
+
+/* ================================================
+   BUTTONS - CINEMATIC
+   ================================================ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: 12px 24px;
+  font-family: var(--font-family);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--gradient-primary);
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+  z-index: -1;
+}
+
+/* Primary Button */
+.btn-primary {
+  background: var(--gradient-primary);
+  color: white;
+  box-shadow: var(--glow-soft);
+  border: 1px solid rgba(124, 58, 237, 0.5);
+}
+
+.btn-primary:hover {
+  transform: scale(1.04) translateY(-2px);
+  box-shadow: var(--glow-medium);
+  border-color: rgba(124, 58, 237, 0.8);
+}
+
+.btn-primary:active {
+  transform: scale(1.01) translateY(0px);
+  box-shadow: var(--glow-soft);
+}
+
+/* Secondary Button */
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--color-white);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: var(--glow-subtle);
+  transform: scale(1.02) translateY(-1px);
+}
+
+/* Icon Button */
+.btn-icon {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon:hover {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: var(--glow-subtle);
+  transform: scale(1.05);
+}
+
+/* ================================================
+   CARDS & PANELS - GLASSMORPHIC
+   ================================================ */
+
+.card {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: var(--spacing-lg);
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.1) 0%, transparent 50%);
+  opacity: 0;
+  transition: opacity 0.4s ease-out;
+  pointer-events: none;
+}
+
+.card:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: var(--glow-soft);
+  transform: translateY(-4px);
+}
+
+.card:hover::before {
+  opacity: 1;
+}
+
+.card-lg {
+  padding: var(--spacing-2xl);
+  border-radius: 20px;
+}
+
+.card-sm {
+  padding: var(--spacing-md);
+  border-radius: 12px;
+}
+
+/* ================================================
+   TEXT UTILITIES
+   ================================================ */
+
+.text-gradient {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-accent {
+  background: var(--gradient-accent);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-muted {
+  color: var(--color-grey-dark);
+}
+
+.text-secondary {
+  color: var(--color-grey-mid);
+}
+
+/* ================================================
+   ANIMATIONS - CINEMATIC
+   ================================================ */
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: var(--glow-soft);
+  }
+  50% {
+    box-shadow: var(--glow-medium);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes rotate-ring {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Animation utilities */
+.fade-in {
+  animation: fade-in 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.fade-in-up {
+  animation: fade-in-up 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.scale-in {
+  animation: scale-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+/* ================================================
+   LOGO & BRANDING
+   ================================================ */
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-3xl);
+  animation: fade-in 1s ease-out;
+}
+
+.logo {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  color: var(--color-white);
+  text-shadow: 0 0 20px rgba(124, 58, 237, 0.3);
+  transition: all 0.4s ease-out;
+}
+
+.logo:hover {
+  text-shadow: 0 0 40px rgba(124, 58, 237, 0.6);
+  transform: scale(1.02);
+}
+
+.logo-glow {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(40px);
+  z-index: -1;
+  animation: pulse 3s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.8;
+  }
+}
+
+/* ================================================
+   RESPONSIVE DESIGN
+   ================================================ */
+
+@media (max-width: 1024px) {
+  .hero-section {
+    padding: 36px 48px;
+  }
+  
+  h1 {
+    font-size: clamp(28px, 7vw, 40px);
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-section {
+    padding: 24px 32px;
+  }
+  
+  .btn {
+    padding: 10px 20px;
+    font-size: 13px;
+  }
+  
+  h1 {
+    font-size: clamp(24px, 6vw, 36px);
+  }
+  
+  h2 {
+    font-size: clamp(20px, 5vw, 28px);
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-section {
+    padding: 16px 20px;
+  }
+  
+  .btn {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+  
+  .card {
+    padding: var(--spacing-md);
+    border-radius: 12px;
+  }
+  
+  h1 {
+    font-size: clamp(20px, 5vw, 28px);
+  }
+}
+
+/* ================================================
+   UTILITY CLASSES
+   ================================================ */
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.grid {
+  display: grid;
+  gap: var(--spacing-lg);
+}
+
+.grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+/* ================================================
+   TOAST & NOTIFICATIONS
+   ================================================ */
+
+.toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: var(--z-modal);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ================================================
+   NO SCROLL
+   ================================================ */
+
+body.no-scroll {
+  overflow: hidden;
+}
