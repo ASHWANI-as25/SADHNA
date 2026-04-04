@@ -442,20 +442,6 @@ const Streaks = () => {
                 />
               </div>
 
-              {/* Milestones Info */}
-              <div className="bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-lg p-4">
-                <h3 className="text-sm font-bold text-purple-300 mb-3">🏆 Your Milestones</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  {MILESTONES_INFO.map((m, i) => (
-                    <div key={i} className="text-sm text-slate-300">
-                      <span className="text-lg mr-2">{m.emoji}</span>
-                      <span className="font-semibold text-white">{m.title}</span>
-                      <p className="text-xs text-slate-400">{m.description}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
               {/* Buttons */}
               <div className="flex gap-3 pt-4">
                 <button
