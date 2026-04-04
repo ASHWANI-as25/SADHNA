@@ -388,7 +388,7 @@ const Streaks = () => {
                 <label className="block text-sm font-bold text-slate-300 mb-3">
                   📋 Select Category
                 </label>
-                <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                   {CATEGORIES.map((cat) => (
                     <motion.button
                       key={cat.value}
