@@ -118,8 +118,26 @@ export const habitPredictionService = {
         },
       };
     } catch (error) {
-      console.error('Error predicting habit success:', error);
-      return { success: false, error: error.message };
+      console.error('❌ Error predicting habit success:', error);
+      
+      // Provide user-friendly error messages
+      let errorMessage = 'Unable to analyze habit at this moment';
+      if (error.message?.includes('API')) {
+        errorMessage = 'API service temporarily unavailable - showing local analysis only';
+      } else if (error.message?.includes('network') || error.message?.includes('Network')) {
+        errorMessage = 'Network connection issue - using offline data';
+      }
+      
+      return { 
+        success: false, 
+        error: errorMessage,
+        fallbackData: {
+          successScore: 0,
+          riskLevel: 'Unknown',
+          riskReason: 'Unable to compute metrics',
+          recommendations: [],
+        }
+      };
     }
   },
 

@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { localAuthService } from '../services/localAuth';
-import { User, Mail, Calendar, Code, MapPin, Phone, FileText, Save, X, Edit2 } from 'lucide-react';
+import { User, Mail, Calendar, Code, MapPin, Phone, FileText, Save, X, Edit2, Palette } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { toast } from '../services/toastService';
 
 const Profile = () => {
   const { user, userProfile } = useAuth();
@@ -10,6 +11,19 @@ const Profile = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [avatarColor, setAvatarColor] = useState(() => {
+    const saved = localStorage.getItem(`avatar_color_${user?.id}`);
+    return saved || 'from-blue-500 to-cyan-500';
+  });
+
+  const avatarColors = [
+    'from-blue-500 to-cyan-500',
+    'from-purple-500 to-pink-500',
+    'from-red-500 to-orange-500',
+    'from-green-500 to-emerald-500',
+    'from-yellow-500 to-amber-500',
+    'from-indigo-500 to-blue-500',
+  ];
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -93,6 +107,12 @@ const Profile = () => {
     setError('');
   };
 
+  const handleAvatarColorChange = (color) => {
+    setAvatarColor(color);
+    localStorage.setItem(`avatar_color_${user?.id}`, color);
+    toast.success('Avatar color updated!');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-sadhna-red via-sadhna-navy to-sadhna-black p-6">
       <div className="max-w-4xl mx-auto">
@@ -158,6 +178,39 @@ const Profile = () => {
                 </>
               )}
             </motion.button>
+          </div>
+
+          {/* Avatar Customization */}
+          <div className="mb-8 p-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/30 rounded-lg">
+            <div className="flex items-center gap-6">
+              {/* Avatar Preview */}
+              <div className={`w-24 h-24 rounded-2xl bg-gradient-to-br ${avatarColor} flex items-center justify-center shadow-lg`}>
+                <span className="text-5xl font-bold text-white">
+                  {formData.fullName?.charAt(0).toUpperCase() || 'U'}
+                </span>
+              </div>
+              {/* Color Picker */}
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-3">
+                  <Palette size={16} className="text-purple-300" />
+                  <label className="text-sm font-semibold text-gray-200">Avatar Color</label>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {avatarColors.map((color) => (
+                    <motion.button
+                      key={color}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleAvatarColorChange(color)}
+                      className={`w-8 h-8 rounded-lg bg-gradient-to-br ${color} border-2 transition-all ${
+                        avatarColor === color ? 'border-white' : 'border-transparent'
+                      }`}
+                      title={`Avatar color option`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Profile Form */}
