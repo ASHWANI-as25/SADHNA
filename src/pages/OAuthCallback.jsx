@@ -1,110 +1,138 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const OAuthCallback = () => {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { oauthLogin } = useAuth();
-  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState('Completing sign in...');
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const handleCallback = async () => {
-      try {
-        const provider = searchParams.get('provider') || 'google';
-        const code = searchParams.get('code');
-        const state = searchParams.get('state');
+    handleCallback();
+  }, []);
 
-        if (!code) {
-          setError('Authorization code not found. Falling back to local authentication.');
-          setTimeout(() => navigate('/auth'), 2000);
+  const handleCallback = async () => {
+    try {
+      // Detect provider from current URL path
+      const path = window.location.pathname;
+      const provider = path.includes('google') ? 'google'
+        : path.includes('github') ? 'github'
+        : path.includes('linkedin') ? 'linkedin'
+        : 'google';
+
+      // Check for error from provider (in query params)
+      const queryParams = new URLSearchParams(window.location.search);
+      const errorParam = queryParams.get('error');
+      if (errorParam) {
+        setError('Sign in was cancelled. Please try again.');
+        return;
+      }
+
+      // GOOGLE IMPLICIT FLOW — token comes in URL hash (#access_token=...)
+      if (provider === 'google') {
+        const hashParams = new URLSearchParams(
+          window.location.hash.startsWith('#') 
+            ? window.location.hash.substring(1) 
+            : window.location.hash
+        );
+        
+        const accessToken = hashParams.get('access_token');
+        const tokenError = hashParams.get('error');
+
+        if (tokenError) {
+          setError('Google sign in failed: ' + tokenError);
           return;
         }
 
-        // Check if backend is configured
-        const apiUrl = import.meta.env.VITE_API_URL || '/api';
-        const backendConfigured = apiUrl !== '/api';
-
-        try {
-          // Try to call backend if configured
-          if (backendConfigured) {
-            const response = await fetch(`${apiUrl}/auth/${provider}/callback`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ code, state })
-            });
-
-            if (response.ok) {
-              const { user, email, name } = await response.json();
-              const result = await oauthLogin(provider, { email, name, userId: user?.id });
-              if (result.error) {
-                throw new Error(result.error);
-              }
-              navigate('/dashboard');
-              return;
-            }
-          }
-        } catch (backendErr) {
-          console.warn('Backend OAuth not available:', backendErr);
+        if (!accessToken) {
+          // No token in hash — old code flow redirect, show helpful message
+          setError('Sign in incomplete. Please try the Google button again.');
+          setTimeout(() => navigate('/auth'), 3000);
+          return;
         }
 
-        // FALLBACK: Demo mode for development
-        console.log('💡 Using demo OAuth mode (frontend-only). For production, implement backend OAuth handler.');
-        const demoEmail = `${provider}-user-${Date.now()}@demo.sadhna.com`;
-        const demoName = `${provider.charAt(0).toUpperCase() + provider.slice(1)} User`;
+        // Use Google token to get real user info
+        setStatus('Getting your Google profile...');
         
+        const userInfoResponse = await fetch(
+          'https://www.googleapis.com/oauth2/v3/userinfo',
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+
+        if (!userInfoResponse.ok) {
+          throw new Error('Could not fetch Google profile. Please try again.');
+        }
+
+        const googleUser = await userInfoResponse.json();
+        
+        // googleUser contains: sub, email, name, picture, email_verified
+        setStatus(`Welcome ${googleUser.name}! Setting up your account...`);
+
+        // Login/signup with real Google data using AuthContext
         const result = await oauthLogin(provider, {
-          email: demoEmail,
-          name: demoName,
-          provider: provider,
-          verified: false
+          email: googleUser.email,
+          name: googleUser.name,
+          googleId: googleUser.sub,
+          picture: googleUser.picture,
         });
 
         if (result.error) {
+          // If "already exists" error — this is a returning user, just proceed
+          if (result.error.includes('already exists') || result.error.includes('exists')) {
+            setStatus('✅ Welcome back! Redirecting...');
+            setTimeout(() => navigate('/dashboard'), 800);
+            return;
+          }
           setError(result.error);
-        } else {
-          navigate('/dashboard');
+          return;
         }
-      } catch (err) {
-        console.error('OAuth callback error:', err);
-        setError(err.message || 'Authentication failed');
-      } finally {
-        setLoading(false);
+
+        setStatus('✅ Signed in successfully! Redirecting...');
+        setTimeout(() => navigate('/dashboard'), 800);
+        return;
       }
-    };
 
-    handleCallback();
-  }, [searchParams, oauthLogin, navigate]);
+      // GITHUB / LINKEDIN — code flow (needs backend, show message)
+      setError(
+        `${provider.charAt(0).toUpperCase() + provider.slice(1)} login requires ` +
+        `backend setup. Please use email & password or Google login.`
+      );
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-sadhna-red to-sadhna-navy flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-energy-cyan border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-white">Signing you in...</p>
-        </div>
+    } catch (err) {
+      console.error('OAuth callback error:', err);
+      setError(err.message || 'Authentication failed. Please try again.');
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-red-950 via-black to-slate-950 
+                    flex items-center justify-center">
+      <div className="text-center max-w-md px-6">
+        {error ? (
+          <div className="bg-red-500/15 border border-red-500/50 rounded-2xl p-8">
+            <p className="text-4xl mb-4">😕</p>
+            <p className="text-red-300 mb-6 text-sm leading-relaxed">{error}</p>
+            <button
+              onClick={() => navigate('/auth')}
+              className="px-8 py-3 bg-gradient-to-r from-red-500 to-rose-600 
+                         text-white rounded-xl font-bold hover:from-red-600 
+                         hover:to-rose-700 transition-all shadow-lg shadow-red-500/30"
+            >
+              Back to Sign In
+            </button>
+          </div>
+        ) : (
+          <div>
+            <div className="w-16 h-16 border-4 border-red-500 border-t-transparent 
+                          rounded-full animate-spin mx-auto mb-6" />
+            <p className="text-white text-lg font-semibold">{status}</p>
+            <p className="text-gray-400 text-sm mt-2">Please wait...</p>
+          </div>
+        )}
       </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-sadhna-red to-sadhna-navy flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-energy-coral mb-4">{error}</p>
-          <button
-            onClick={() => navigate('/auth')}
-            className="px-6 py-2 bg-energy-coral text-white rounded-lg hover:bg-energy-pink"
-          >
-            Back to Sign In
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return null;
+    </div>
+  );
 };
 
 export default OAuthCallback;

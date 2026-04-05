@@ -13,6 +13,8 @@ const Auth = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [focusedField, setFocusedField] = useState('');
+  const [emailExists, setEmailExists] = useState(null); // null = not checked, true = exists, false = not found
+  const [typoSuggestion, setTypoSuggestion] = useState(null);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -26,6 +28,49 @@ const Auth = () => {
       return () => clearTimeout(timer);
     }
   }, [error]);
+
+  // Check if email exists in localStorage
+  const checkEmailExists = async (email) => {
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEmailExists(null);
+      return;
+    }
+    try {
+      const { localAuthService } = await import('../services/localAuth');
+      const user = localAuthService.findUserByEmail(email);
+      setEmailExists(!!user);
+    } catch (err) {
+      console.error('Error checking email:', err);
+      setEmailExists(null);
+    }
+  };
+
+  // Check for common email typos
+  const checkEmailFormat = (email) => {
+    const typoMap = {
+      'gmial.com': 'gmail.com',
+      'gmal.com': 'gmail.com',
+      'gamil.com': 'gmail.com',
+      'gmai.com': 'gmail.com',
+      'yaho.com': 'yahoo.com',
+      'yahooo.com': 'yahoo.com',
+      'hotmial.com': 'hotmail.com',
+      'hotmal.com': 'hotmail.com',
+      'outlok.com': 'outlook.com',
+    };
+    
+    const domain = email.split('@')[1];
+    if (domain && typoMap[domain]) {
+      const correctedEmail = email.split('@')[0] + '@' + typoMap[domain];
+      setTypoSuggestion({
+        original: email,
+        corrected: correctedEmail,
+        message: `Did you mean ${correctedEmail}?`
+      });
+      return;
+    }
+    setTypoSuggestion(null);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -51,14 +96,34 @@ const Auth = () => {
       }
 
       if (isLogin) {
+        // Step 1: Check if email exists before trying password
+        try {
+          const { localAuthService } = await import('../services/localAuth');
+          const existingUser = localAuthService.findUserByEmail(formData.email);
+          
+          if (!existingUser) {
+            setError('❌ No account found with this email. Please sign up first.');
+            setLoading(false);
+            return;
+          }
+        } catch (err) {
+          console.error('Error checking email existence:', err);
+        }
+
+        // Step 2: Try login with password
         const { error: loginError } = await login(formData.email, formData.password);
         if (loginError) {
-          setError(loginError);
+          // Email exists but password is wrong
+          if (loginError.includes('Invalid credentials')) {
+            setError('❌ Wrong password. Please try again.');
+          } else {
+            setError(loginError);
+          }
         } else {
           // Mark user as visited for returning user detection
           markUserAsVisited();
           setSuccess('✅ Logged in successfully!');
-          setTimeout(() => navigate('/'), 500);
+          setTimeout(() => navigate('/dashboard'), 500);
         }
       } else {
         // Validate password strength for signup
@@ -86,7 +151,7 @@ const Auth = () => {
         } else {
           // New user - they'll land on landing page to see onboarding
           setSuccess('✅ Account created! Redirecting...');
-          setTimeout(() => navigate('/'), 500);
+          setTimeout(() => navigate('/dashboard'), 500);
         }
       }
     } catch (err) {
@@ -107,7 +172,8 @@ const Auth = () => {
           clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
           redirectUri: `${window.location.origin}/auth/google/callback`,
           authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
-          scope: 'openid profile email'
+          scope: 'openid profile email',
+          prompt: 'select_account' // Always show account selection screen
         },
         github: {
           clientId: import.meta.env.VITE_GITHUB_CLIENT_ID,
@@ -134,18 +200,21 @@ const Auth = () => {
       const state = Math.random().toString(36).substring(7);
       sessionStorage.setItem(`oauth_state_${provider}`, state);
 
-      // Build OAuth URL
+      // Build OAuth URL - using implicit flow for frontend-only auth
       const params = new URLSearchParams({
         client_id: config.clientId,
         redirect_uri: config.redirectUri,
-        response_type: 'code',
         scope: config.scope,
         state: state
       });
 
       if (provider === 'google') {
-        params.append('access_type', 'offline');
-        params.append('prompt', 'consent');
+        // Implicit flow - token comes back in URL hash (no backend needed)
+        params.set('response_type', 'token');
+        // ALWAYS show account picker + force password/passkey
+        params.set('prompt', 'select_account');
+      } else {
+        params.set('response_type', 'code');
       }
 
       // Redirect to provider
@@ -315,7 +384,21 @@ const Auth = () => {
                       type="email"
                       name="email"
                       value={formData.email}
-                      onChange={handleChange}
+                      onChange={(e) => {
+                        handleChange(e);
+                        if (isLogin) {
+                          // Check email format for typos
+                          checkEmailFormat(e.target.value);
+                          // Check if email exists with debounce
+                          clearTimeout(window._emailCheckTimer);
+                          window._emailCheckTimer = setTimeout(() => {
+                            checkEmailExists(e.target.value);
+                          }, 600);
+                        } else {
+                          setEmailExists(null);
+                          setTypoSuggestion(null);
+                        }
+                      }}
                       onFocus={() => setFocusedField('email')}
                       onBlur={() => setFocusedField('')}
                       placeholder="you@example.com"
@@ -323,6 +406,55 @@ const Auth = () => {
                       required
                     />
                   </div>
+                  
+                  {/* Email hints for login mode */}
+                  {isLogin && (
+                    <>
+                      {emailExists === true && (
+                        <p className="text-xs text-green-400 mt-2 flex items-center gap-1.5">
+                          <span className="text-sm">✅</span>
+                          <span>Account found — enter your password below</span>
+                        </p>
+                      )}
+                      {emailExists === false && (
+                        <p className="text-xs text-red-400 mt-2 flex items-center gap-1.5">
+                          <span className="text-sm">❌</span>
+                          <span>No account with this email — </span>
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              setIsLogin(false);
+                              setError('');
+                              setSuccess('');
+                              setEmailExists(null);
+                            }}
+                            className="underline hover:text-red-300 font-semibold"
+                          >
+                            Sign up instead?
+                          </button>
+                        </p>
+                      )}
+                    </>
+                  )}
+
+                  {/* Email typo suggestion */}
+                  {typoSuggestion && (
+                    <p className="text-xs text-amber-400 mt-2 flex items-center gap-1.5">
+                      <span className="text-sm">💡</span>
+                      <span>{typoSuggestion.message}</span>
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setFormData({...formData, email: typoSuggestion.corrected});
+                          setTypoSuggestion(null);
+                          setTimeout(() => checkEmailExists(typoSuggestion.corrected), 100);
+                        }}
+                        className="underline hover:text-amber-300 font-semibold"
+                      >
+                        Fix it
+                      </button>
+                    </p>
+                  )}
                 </div>
 
                 {/* Password */}

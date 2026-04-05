@@ -147,32 +147,49 @@ export const AuthProvider = ({ children }) => {
       const fullName = oauthData.name || `${provider.charAt(0).toUpperCase() + provider.slice(1)} User`;
       const password = `oauth_${provider}_${Math.random().toString(36).slice(2, 10)}`;
       
-      const { user: newUser, error: signupError } = await localAuthService.signup(
-        email,
-        password,
-        fullName
-      );
+      // Try to find existing user first (returning OAuth user)
+      const existingUser = localAuthService.findUserByEmail(email);
 
-      if (signupError) {
-        setError(signupError);
-        return { error: signupError, user: null };
+      let targetUser;
+
+      if (existingUser) {
+        // Returning user — just log them in directly without password
+        // Update their stored info with latest from OAuth provider
+        localStorage.setItem('current_user', JSON.stringify(existingUser));
+        targetUser = existingUser;
+      } else {
+        // New user — create account
+        const { user: newUser, error: signupError } = await localAuthService.signup(
+          email,
+          password,
+          fullName
+        );
+
+        if (signupError) {
+          setError(signupError);
+          return { error: signupError, user: null };
+        }
+        targetUser = newUser;
       }
 
-      setUser(newUser);
-      setIsNewUser(true);
+      setUser(targetUser);
+      setIsNewUser(!existingUser); // Only new if didn't exist before
       
       // Store OAuth provider info and user email for welcome back greeting
-      localStorage.setItem(`oauth_provider_${newUser.id}`, provider);
-      localStorage.setItem(`oauth_email_${newUser.id}`, email);
-      localStorage.setItem(`oauth_name_${newUser.id}`, fullName);
-      localStorage.setItem('user_signup_timestamp', new Date().toISOString());
+      localStorage.setItem(`oauth_provider_${targetUser.id}`, provider);
+      localStorage.setItem(`oauth_email_${targetUser.id}`, email);
+      localStorage.setItem(`oauth_name_${targetUser.id}`, fullName);
       
-      const { data: profile } = localAuthService.getUserProfile(newUser.id);
+      if (!existingUser) {
+        localStorage.setItem('user_signup_timestamp', new Date().toISOString());
+      }
+      
+      const { data: profile } = localAuthService.getUserProfile(targetUser.id);
       if (profile) {
         setUserProfile(profile);
       }
 
-      return { user: newUser, error: null };
+      return { user: targetUser, error: null };
     } catch (err) {
       setError(err.message);
       return { error: err.message, user: null };
