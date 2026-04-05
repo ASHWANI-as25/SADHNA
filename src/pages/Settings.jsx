@@ -120,16 +120,20 @@ const Settings = () => {
   const SettingToggle = ({ label, value, onChange, icons: [IconOff, IconOn] }) => (
     <motion.div
       whileHover={{ x: 4 }}
-      className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all"
+      className={`flex items-center justify-between p-3 rounded-lg transition-all ${
+        isDarkMode 
+          ? 'bg-white/5 hover:bg-white/10' 
+          : 'bg-gray-200 hover:bg-gray-300'
+      }`}
     >
-      <span className="font-medium text-sm">{label}</span>
+      <span className={`font-medium text-sm ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{label}</span>
       <button
         onClick={() => {
           onChange(!value);
           setIsChanged(true);
         }}
         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-all ${
-          value ? 'bg-accent' : 'bg-gray-600'
+          value ? 'bg-accent' : isDarkMode ? 'bg-gray-600' : 'bg-gray-400'
         }`}
       >
         <span
@@ -144,11 +148,15 @@ const Settings = () => {
   const SettingSelect = ({ label, value, onChange, options, icon: Icon }) => (
     <motion.div
       whileHover={{ x: 4 }}
-      className="flex items-center justify-between p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all"
+      className={`flex items-center justify-between p-3 rounded-lg transition-all ${
+        isDarkMode 
+          ? 'bg-white/5 hover:bg-white/10' 
+          : 'bg-gray-200 hover:bg-gray-300'
+      }`}
     >
       <div className="flex items-center gap-2">
         {Icon && <Icon size={16} className="text-accent" />}
-        <span className="font-medium text-sm">{label}</span>
+        <span className={`font-medium text-sm ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>{label}</span>
       </div>
       <select
         value={value}
@@ -156,7 +164,11 @@ const Settings = () => {
           onChange(e.target.value);
           setIsChanged(true);
         }}
-        className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-1 text-sm font-medium cursor-pointer hover:bg-gray-600 transition-all"
+        className={`rounded-lg px-3 py-1 text-sm font-medium cursor-pointer transition-all ${
+          isDarkMode
+            ? 'bg-gray-700 border border-gray-600 text-white hover:bg-gray-600'
+            : 'bg-gray-100 border border-gray-400 text-gray-800 hover:bg-white'
+        }`}
       >
         {options.map(opt => (
           <option key={opt} value={opt}>{opt}</option>
@@ -177,7 +189,7 @@ const Settings = () => {
           >
             <button
               onClick={() => navigate(-1)}
-              className="p-2 hover:bg-white/10 rounded-lg transition-all"
+              className={`p-2 rounded-lg transition-all ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-gray-300'}`}
             >
               <ArrowLeft size={20} />
             </button>
@@ -216,8 +228,8 @@ const Settings = () => {
                 activeTab === tab.id
                   ? 'bg-accent text-white'
                   : isDarkMode
-                  ? 'bg-white/5 hover:bg-white/10'
-                  : 'bg-gray-200 hover:bg-gray-300'
+                  ? 'bg-white/5 hover:bg-white/10 text-white'
+                  : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
               }`}
             >
               <tab.icon size={16} />
@@ -237,7 +249,7 @@ const Settings = () => {
               className="space-y-6"
             >
               <div>
-                <h2 className="text-xl font-bold mb-4">Interview Preferences</h2>
+                <h2 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Interview Preferences</h2>
                 <div className="space-y-3">
                   <SettingSelect
                     label="Default Difficulty"
@@ -268,8 +280,8 @@ const Settings = () => {
                 </div>
               </div>
 
-              <div className="border-t border-white/10 pt-6">
-                <h2 className="text-xl font-bold mb-4">Recording & Proctoring</h2>
+              <div className={`border-t ${isDarkMode ? 'border-white/10' : 'border-gray-300'} pt-6`}>
+                <h2 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Recording & Proctoring</h2>
                 <div className="space-y-3">
                   <SettingToggle
                     label="Auto-Start Recording"
@@ -297,7 +309,7 @@ const Settings = () => {
               className="space-y-6"
             >
               <div>
-                <h2 className="text-xl font-bold mb-4">Editor & Display</h2>
+                <h2 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Editor & Display</h2>
                 <div className="space-y-3">
                   <SettingSelect
                     label="Font Size"
@@ -321,8 +333,8 @@ const Settings = () => {
                 </div>
               </div>
 
-              <div className="border-t border-white/10 pt-6">
-                <h2 className="text-xl font-bold mb-4">Preview</h2>
+              <div className={`border-t ${isDarkMode ? 'border-white/10' : 'border-gray-300'} pt-6`}>
+                <h2 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Preview</h2>
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
@@ -347,7 +359,7 @@ const Settings = () => {
               className="space-y-6"
             >
               <div>
-                <h2 className="text-xl font-bold mb-4">Notifications</h2>
+                <h2 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Notifications</h2>
                 <div className="space-y-3">
                   <SettingToggle
                     label="Enable Notifications"
@@ -364,8 +376,8 @@ const Settings = () => {
                 </div>
               </div>
 
-              <div className="border-t border-white/10 pt-6">
-                <h2 className="text-xl font-bold mb-4">Real-time Features</h2>
+              <div className={`border-t ${isDarkMode ? 'border-white/10' : 'border-gray-300'} pt-6`}>
+                <h2 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Real-time Features</h2>
                 <div className="space-y-3">
                   <SettingToggle
                     label="Real-time Transcription"
@@ -393,7 +405,7 @@ const Settings = () => {
               className="space-y-6"
             >
               <div>
-                <h2 className="text-xl font-bold mb-4">Privacy Settings</h2>
+                <h2 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Privacy Settings</h2>
                 <div className="space-y-3">
                   <SettingToggle
                     label="Privacy Mode (No Face Detection)"
@@ -411,8 +423,8 @@ const Settings = () => {
                 </div>
               </div>
 
-              <div className="border-t border-white/10 pt-6">
-                <h2 className="text-xl font-bold mb-4">Data Management</h2>
+              <div className={`border-t ${isDarkMode ? 'border-white/10' : 'border-gray-300'} pt-6`}>
+                <h2 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Data Management</h2>
                 <div className="space-y-3">
                   <motion.button
                     whileHover={{ x: 4 }}
@@ -437,8 +449,12 @@ const Settings = () => {
                 </div>
               </div>
 
-              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
-                <p className="text-xs text-yellow-300">
+              <div className={`rounded-lg p-4 ${
+                isDarkMode
+                  ? 'bg-yellow-500/10 border border-yellow-500/30'
+                  : 'bg-yellow-100 border border-yellow-400'
+              }`}>
+                <p className={`text-xs ${isDarkMode ? 'text-yellow-300' : 'text-yellow-800'}`}>
                   ⚠️ Clearing history cannot be undone. All interview records and analytics will be permanently deleted.
                 </p>
               </div>
@@ -452,7 +468,11 @@ const Settings = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={resetSettings}
-            className="px-6 py-3 rounded-lg border border-white/20 hover:bg-white/10 transition-all font-medium flex items-center gap-2"
+            className={`px-6 py-3 rounded-lg transition-all font-medium flex items-center gap-2 ${
+              isDarkMode
+                ? 'border border-white/20 hover:bg-white/10'
+                : 'border border-gray-400 hover:bg-gray-200 text-gray-800'
+            }`}
           >
             <RotateCcw size={16} />
             Reset to Defaults
@@ -465,7 +485,9 @@ const Settings = () => {
             className={`px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-all ${
               isChanged && !isSaving
                 ? 'bg-accent text-white hover:shadow-lg'
-                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                : isDarkMode
+                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
             <Save size={16} />
