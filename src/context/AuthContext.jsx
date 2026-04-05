@@ -145,7 +145,11 @@ export const AuthProvider = ({ children }) => {
       // Use provided email/name from OAuth, or generate demo
       const email = oauthData.email || `${provider}-${Date.now()}@oauth.sadhna.com`;
       const fullName = oauthData.name || `${provider.charAt(0).toUpperCase() + provider.slice(1)} User`;
-      const password = `oauth_${provider}_${Math.random().toString(36).slice(2, 10)}`;
+      
+      // Generate secure password that meets validation requirements (uppercase, lowercase, number)
+      const randomNum = Math.floor(Math.random() * 9000) + 1000; // 4-digit number
+      const randomStr = Math.random().toString(36).slice(2, 8).toUpperCase(); // Random uppercase letters
+      const password = `OAuth${randomStr}${randomNum}`; // e.g., OAuthABC1234
       
       // Try to find existing user first (returning OAuth user)
       const existingUser = localAuthService.findUserByEmail(email);
