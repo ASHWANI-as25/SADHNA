@@ -5,6 +5,7 @@ import { Play, TrendingUp, Clock, CheckCircle2, ChevronRight, Trash2, Zap, Targe
 import { useInterview } from '../context/InterviewContext';
 import { useAuth } from '../context/AuthContext';
 import { streakService } from '../services/streakService';
+import { streakManagementService } from '../services/streakManagementService';
 import { motivationService } from '../services/motivationService';
 import { fullscreenService } from '../services/fullscreenService';
 import FloatingCard from '../components/FloatingCard';
@@ -17,6 +18,11 @@ const Dashboard = () => {
   const [displayName, setDisplayName] = useState('');
   const [oauthProvider, setOauthProvider] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [streakStats, setStreakStats] = useState(null);
+  const [totalCheckins, setTotalCheckins] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
+  const [activeStreaksCount, setActiveStreaksCount] = useState(0);
+  const [weeklyCheckins, setWeeklyCheckins] = useState(0);
 
   // Mark user as visited when they land on dashboard (for new users)
   useEffect(() => {
@@ -47,6 +53,53 @@ const Dashboard = () => {
       }
     }
   }, [user?.id, userProfile]);
+
+  // Load real streak data from localStorage
+  const loadStreakData = async () => {
+    if (!user?.id) return;
+    
+    const result = await streakManagementService.getStreakStats(user.id);
+    if (result.success) {
+      setStreakStats(result.data);
+      setTotalCheckins(result.data.totalCheckins);
+      setBestStreak(result.data.bestStreak);
+      setActiveStreaksCount(result.data.activeStreaks);
+    }
+
+    // Calculate this week's checkins
+    const checkins = JSON.parse(localStorage.getItem('app_checkins') || '[]');
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+      .toISOString().split('T')[0];
+    const thisWeek = checkins.filter(c => 
+      c.user_id === user.id && c.checkin_date >= sevenDaysAgo
+    ).length;
+    setWeeklyCheckins(thisWeek);
+  };
+
+  // Load streak data on mount and when user changes
+  useEffect(() => {
+    if (user?.id) {
+      loadStreakData();
+    }
+  }, [user?.id]);
+
+  // Refresh data when window regains focus (BUG 6)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (user?.id) loadStreakData();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [user?.id]);
+
+  // Refresh data on visibility change (BUG 6)
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (!document.hidden && user?.id) loadStreakData();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  }, [user?.id]);
 
   // Calculate metrics
   const averageScore = history.length > 0 
@@ -117,9 +170,9 @@ const Dashboard = () => {
                 )}
               </h1>
               <p className="text-energy-cyan text-lg font-semibold">
-                {currentStreak > 0 
-                  ? `🚀 Keep your ${currentStreak}-day streak alive! One check-in today keeps momentum going.` 
-                  : '✨ It\'s time to start building your first streak today!'}
+                {(streakStats?.totalCheckins || 0) > 0
+                  ? `🚀 You have ${streakStats?.activeStreaks || 0} active streaks with ${streakStats?.totalCheckins || 0} total check-ins! Keep going!`
+                  : '✨ Create your first streak and start building consistency today!'}
               </p>
             </div>
             
@@ -160,7 +213,7 @@ const Dashboard = () => {
           variants={itemVariants}
           className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
         >
-          {/* Current Streak */}
+          {/* Best Streak */}
           <motion.button
             variants={itemVariants}
             whileHover={{ y: -6, scale: 1.02 }}
@@ -169,8 +222,8 @@ const Dashboard = () => {
           >
             <div className="flex items-start justify-between mb-4">
               <div>
-                <p className="text-gray-300 text-sm font-semibold uppercase tracking-wider">🔥 Current Streak</p>
-                <h3 className="text-5xl font-black bg-gradient-to-r from-energy-coral to-energy-pink bg-clip-text text-transparent mt-2">{currentStreak}</h3>
+                <p className="text-gray-300 text-sm font-semibold uppercase tracking-wider">🔥 Best Streak</p>
+                <h3 className="text-5xl font-black bg-gradient-to-r from-energy-coral to-energy-pink bg-clip-text text-transparent mt-2">{streakStats?.bestStreak || 0}</h3>
                 <p className="text-xs text-energy-coral font-semibold mt-2">Days Consistent</p>
               </div>
               <Flame className="text-energy-coral group-hover:scale-110 transition-transform" size={28} fill="currentColor" />
@@ -188,9 +241,9 @@ const Dashboard = () => {
               <div>
                 <p className="text-gray-300 text-sm font-semibold uppercase tracking-wider">📅 This Week</p>
                 <h3 className="text-5xl font-black bg-gradient-to-r from-energy-cyan to-energy-lime bg-clip-text text-transparent mt-2">
-                  {history.filter(h => new Date(h.date) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length}
+                  {weeklyCheckins}
                 </h3>
-                <p className="text-xs text-energy-cyan font-semibold mt-2">Interviews Done</p>
+                <p className="text-xs text-energy-cyan font-semibold mt-2">Check-ins This Week</p>
               </div>
               <Calendar className="text-energy-cyan group-hover:scale-110 transition-transform" size={28} />
             </div>
@@ -273,7 +326,7 @@ const Dashboard = () => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/daily-todos')}
+            onClick={() => navigate('/dashboard/todos')}
             className="group glass-card border-energy-gold/50 bg-gradient-to-br from-energy-gold/20 to-energy-lime/10 p-6 rounded-2xl hover:shadow-2xl hover:shadow-energy-gold/40"
           >
             <div className="flex flex-col items-center text-center gap-3">
@@ -317,10 +370,10 @@ const Dashboard = () => {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: '🌱 Strong Start', days: 7, achieved: currentStreak >= 7, color: '#39FF14' },
-              { label: '🔥 One Month', days: 30, achieved: currentStreak >= 30, color: '#FFD700' },
-              { label: '💯 Century', days: 100, achieved: currentStreak >= 100, color: '#FF1493' },
-              { label: '👑 Year Legend', days: 365, achieved: currentStreak >= 365, color: '#00D9FF' }
+              { label: '🌱 Strong Start', days: 7, achieved: (streakStats?.bestStreak || 0) >= 7, color: '#39FF14' },
+              { label: '🔥 One Month', days: 30, achieved: (streakStats?.bestStreak || 0) >= 30, color: '#FFD700' },
+              { label: '💯 Century', days: 100, achieved: (streakStats?.bestStreak || 0) >= 100, color: '#FF1493' },
+              { label: '👑 Year Legend', days: 365, achieved: (streakStats?.bestStreak || 0) >= 365, color: '#00D9FF' }
             ].map((milestone, idx) => (
               <motion.div
                 key={idx}
@@ -338,13 +391,13 @@ const Dashboard = () => {
                   <p className="text-2xl mb-1">{milestone.label.split(' ')[0]}</p>
                   <p className="font-bold text-white mb-1">{milestone.label.split(' ').slice(1).join(' ')}</p>
                   <p className={`text-sm font-bold ${milestone.achieved ? 'text-energy-lime' : 'text-gray-400'}`}>
-                    {milestone.achieved ? '✅ Unlocked!' : `${Math.min(currentStreak, milestone.days)}/${milestone.days} days`}
+                    {milestone.achieved ? '✅ Unlocked!' : `${Math.min(streakStats?.bestStreak || 0, milestone.days)}/${milestone.days} days`}
                   </p>
-                  {!milestone.achieved && currentStreak > 0 && (
+                  {!milestone.achieved && (streakStats?.bestStreak || 0) > 0 && (
                     <div className="w-full bg-gray-700/50 rounded-full h-1.5 mt-2">
                       <div 
                         className="bg-gradient-to-r from-energy-coral to-energy-pink h-1.5 rounded-full transition-all"
-                        style={{ width: `${(currentStreak / milestone.days) * 100}%` }}
+                        style={{ width: `${((streakStats?.bestStreak || 0) / milestone.days) * 100}%` }}
                       ></div>
                     </div>
                   )}
@@ -458,8 +511,8 @@ const Dashboard = () => {
               <div>
                 <h3 className="text-lg font-bold text-white mb-2">✨ Daily Motivation</h3>
                 <p className="text-gray-200 leading-relaxed text-sm">
-                  {currentStreak > 0 
-                    ? `🔥 You're on a ${currentStreak}-day streak! Consistency is the key to mastery. Keep pushing and stay motivated!` 
+                  {(streakStats?.bestStreak || 0) > 0
+                    ? `🔥 Your best streak is ${streakStats?.bestStreak} days! You have ${streakStats?.activeStreaks || 0} active habits. Keep pushing!`
                     : '✨ Start your first streak today and unlock your potential! Every great journey begins with a single step.'}
                 </p>
               </div>
