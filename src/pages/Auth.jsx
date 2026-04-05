@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import CinematicStarfield from '../components/CinematicStarfield';
 import { Mail, Lock, User, ArrowRight, Loader2, Zap, CheckCircle2, Trophy, Flame, Target } from 'lucide-react';
-import { FaGoogle, FaGithub, FaLinkedin } from 'react-icons/fa6';
+import { FaGoogle } from 'react-icons/fa6';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -174,18 +174,6 @@ const Auth = () => {
           authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
           scope: 'openid profile email',
           prompt: 'select_account' // Always show account selection screen
-        },
-        github: {
-          clientId: import.meta.env.VITE_GITHUB_CLIENT_ID,
-          redirectUri: `${window.location.origin}/auth/github/callback`,
-          authUrl: 'https://github.com/login/oauth/authorize',
-          scope: 'read:user user:email'
-        },
-        linkedin: {
-          clientId: import.meta.env.VITE_LINKEDIN_CLIENT_ID,
-          redirectUri: `${window.location.origin}/auth/linkedin/callback`,
-          authUrl: 'https://www.linkedin.com/oauth/v2/authorization',
-          scope: 'openid profile email'
         }
       };
 
@@ -518,36 +506,17 @@ const Auth = () => {
                   </div>
                 </div>
 
-                {/* OAuth Sign-In Buttons */}
-                <div className="grid grid-cols-3 gap-2">
+                {/* OAuth Sign-In Button */}
+                <div className="flex justify-center">
                   <button
                     type="button"
                     onClick={() => handleOAuthSignIn('google')}
                     disabled={loading}
-                    className="flex items-center justify-center py-3 px-3 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 hover:border-red-500/50 transition-all disabled:opacity-50 text-white hover:text-red-400 hover:shadow-lg hover:shadow-red-500/20 group"
+                    className="flex items-center justify-center py-3 px-6 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 hover:border-red-500/50 transition-all disabled:opacity-50 text-white hover:text-red-400 hover:shadow-lg hover:shadow-red-500/20 group"
                     title="Sign in with Google"
                   >
-                    <FaGoogle size={20} className="group-hover:scale-110 transition-transform" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleOAuthSignIn('github')}
-                    disabled={loading}
-                    className="flex items-center justify-center py-3 px-3 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 hover:border-red-500/50 transition-all disabled:opacity-50 text-white hover:text-red-400 hover:shadow-lg hover:shadow-red-500/20 group"
-                    title="Sign in with GitHub"
-                  >
-                    <FaGithub size={20} className="group-hover:scale-110 transition-transform" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleOAuthSignIn('linkedin')}
-                    disabled={loading}
-                    className="flex items-center justify-center py-3 px-3 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 hover:border-red-500/50 transition-all disabled:opacity-50 text-white hover:text-red-400 hover:shadow-lg hover:shadow-red-500/20 group"
-                    title="Sign in with LinkedIn"
-                  >
-                    <FaLinkedin size={20} className="group-hover:scale-110 transition-transform" />
+                    <FaGoogle size={20} className="group-hover:scale-110 transition-transform mr-2" />
+                    Google
                   </button>
                 </div>
 
@@ -747,36 +716,17 @@ const Auth = () => {
                   </div>
                 </div>
 
-                {/* OAuth Sign-In Buttons */}
-                <div className="grid grid-cols-3 gap-2">
+                {/* OAuth Sign-In Button */}
+                <div className="flex justify-center">
                   <button
                     type="button"
                     onClick={() => handleOAuthSignIn('google')}
                     disabled={loading}
-                    className="flex items-center justify-center py-2.5 px-2 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 hover:border-red-500/50 transition-all disabled:opacity-50 text-white hover:text-red-400 hover:shadow-lg hover:shadow-red-500/20 group"
+                    className="flex items-center justify-center py-3 px-6 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 hover:border-red-500/50 transition-all disabled:opacity-50 text-white hover:text-red-400 hover:shadow-lg hover:shadow-red-500/20 group"
                     title="Sign in with Google"
                   >
-                    <FaGoogle size={18} className="group-hover:scale-110 transition-transform" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleOAuthSignIn('github')}
-                    disabled={loading}
-                    className="flex items-center justify-center py-2.5 px-2 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 hover:border-red-500/50 transition-all disabled:opacity-50 text-white hover:text-red-400 hover:shadow-lg hover:shadow-red-500/20 group"
-                    title="Sign in with GitHub"
-                  >
-                    <FaGithub size={18} className="group-hover:scale-110 transition-transform" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleOAuthSignIn('linkedin')}
-                    disabled={loading}
-                    className="flex items-center justify-center py-2.5 px-2 rounded-lg bg-white/5 hover:bg-white/15 border border-white/10 hover:border-red-500/50 transition-all disabled:opacity-50 text-white hover:text-red-400 hover:shadow-lg hover:shadow-red-500/20 group"
-                    title="Sign in with LinkedIn"
-                  >
-                    <FaLinkedin size={18} className="group-hover:scale-110 transition-transform" />
+                    <FaGoogle size={20} className="group-hover:scale-110 transition-transform mr-2" />
+                    Google
                   </button>
                 </div>
 
