@@ -4,6 +4,7 @@ import { localAuthService } from '../services/localAuth';
 import { User, Mail, Calendar, Code, MapPin, Phone, FileText, Save, X, Edit2, Palette } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from '../services/toastService';
+import ActivityHeatmap from '../components/ActivityHeatmap';
 
 const Profile = () => {
   const { user, userProfile } = useAuth();
@@ -449,6 +450,9 @@ const Profile = () => {
             )}
           </div>
         </motion.div>
+
+        {/* Activity Heatmap Calendar */}
+        <ActivityHeatmap userId={user?.id} />
 
         {/* Info Box */}
         <motion.div

@@ -9,6 +9,72 @@ import { toast } from '../services/toastService';
 import GlowButton from './GlowButton';
 import '../styles/streaks.css';
 
+// ─── MINI HEATMAP COMPONENT ───────────────────────────────────────
+const MiniHeatmap = ({ streakId }) => {
+  const [weekData, setWeekData] = useState([]);
+
+  useEffect(() => {
+    try {
+      const checkins = JSON.parse(localStorage.getItem('app_checkins') || '[]');
+      const streakCheckins = checkins.filter(c => c.streak_id === streakId && c.status === 'completed');
+
+      const weeks = [];
+      const today = new Date();
+
+      for (let w = 11; w >= 0; w--) {
+        const week = [];
+        for (let d = 0; d < 7; d++) {
+          const date = new Date(today);
+          date.setDate(today.getDate() - (w * 7) - (6 - d));
+          const dateStr = date.toISOString().split('T')[0];
+          const hasCheckin = streakCheckins.some(
+            c => c.checkin_date === dateStr && c.status === 'completed'
+          );
+          week.push({ date: dateStr, active: hasCheckin });
+        }
+        weeks.push(week);
+      }
+      setWeekData(weeks);
+    } catch (e) {
+      console.warn('Error loading mini heatmap:', e);
+    }
+  }, [streakId]);
+
+  if (weekData.length === 0) return null;
+
+  return (
+    <div>
+      <p className="text-xs font-semibold text-slate-300 mb-2">📅 Last 12 Weeks</p>
+      <div className="flex gap-[2px]">
+        {weekData.map((week, wi) => (
+          <div key={wi} className="flex flex-col gap-[2px]">
+            {week.map((day, di) => (
+              <div
+                key={di}
+                title={`${day.date}: ${day.active ? '✅ checked in' : '❌ missed'}`}
+                className="cursor-help"
+                style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '1px',
+                  backgroundColor: day.active ? '#22c55e' : '#1e293b',
+                  transition: 'transform 0.1s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              />
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 // Category emoji mapping
 const CATEGORY_EMOJI = {
   'Coding': '💻',
@@ -336,6 +402,9 @@ const StreakCard = ({ streak, userId, onUpdate }) => {
                   </a>
                 </div>
               )}
+
+              {/* Mini Heatmap */}
+              <MiniHeatmap streakId={streak.id} />
 
               {prediction && (
                 <div className="space-y-2">
