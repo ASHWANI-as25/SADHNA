@@ -189,12 +189,12 @@ const Settings = () => {
           >
             <button
               onClick={() => navigate(-1)}
-              className={`p-2 rounded-lg transition-all ${isDarkMode ? 'hover:bg-white/10' : 'hover:bg-gray-300'}`}
+              className={`p-2 rounded-lg transition-all ${isDarkMode ? 'hover:bg-white/10 text-white' : 'hover:bg-gray-300 text-gray-800'}`}
             >
               <ArrowLeft size={20} />
             </button>
             <div>
-              <h1 className="text-2xl font-bold">Settings</h1>
+              <h1 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Settings</h1>
               <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Customize your experience</p>
             </div>
           </motion.div>
