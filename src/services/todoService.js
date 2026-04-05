@@ -1,31 +1,46 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 
-// Safe wrapper for database operations
-const withDbCheck = async (operation, operationName) => {
-  if (!isSupabaseConfigured) {
-    console.warn(`⚠️ ${operationName} skipped - Database not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env.local`);
-    return {
-      success: false,
-      error: `Database not available. ${operationName} requires Supabase.`,
-      data: null
-    };
+const TODOS_KEY = 'app_todos';
+
+const initializeTodosDB = () => {
+  if (!localStorage.getItem(TODOS_KEY)) {
+    localStorage.setItem(TODOS_KEY, JSON.stringify([]));
   }
-  try {
-    return await operation();
-  } catch (error) {
-    console.error(`Error in ${operationName}:`, error);
-    return {
-      success: false,
-      error: error.message || `Failed to ${operationName}`,
-      data: null
-    };
-  }
+};
+
+const getTodosFromLocal = () => {
+  initializeTodosDB();
+  return JSON.parse(localStorage.getItem(TODOS_KEY)) || [];
+};
+
+const saveTodosToLocal = (todos) => {
+  localStorage.setItem(TODOS_KEY, JSON.stringify(todos));
 };
 
 export const todoService = {
   // Create a new todo
   async createTodo(userId, todoData) {
     try {
+      if (!isSupabaseConfigured) {
+        // Use localStorage fallback
+        const todos = getTodosFromLocal();
+        const newTodo = {
+          id: `${userId}-${Date.now()}`,
+          user_id: userId,
+          title: todoData.title,
+          description: todoData.description || '',
+          related_streak_id: todoData.related_streak_id || null,
+          priority: todoData.priority || 'medium',
+          due_date: todoData.due_date || new Date().toISOString().split('T')[0],
+          is_completed: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        todos.push(newTodo);
+        saveTodosToLocal(todos);
+        return { success: true, data: newTodo };
+      }
+
       const { data, error } = await supabase
         .from('daily_todos')
         .insert({
@@ -50,6 +65,17 @@ export const todoService = {
   // Get todos for a specific date
   async getTodosByDate(userId, date) {
     try {
+      if (!isSupabaseConfigured) {
+        const todos = getTodosFromLocal()
+          .filter(t => t.user_id === userId && t.due_date === date)
+          .sort((a, b) => {
+            const priorityOrder = { high: 3, medium: 2, low: 1 };
+            return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0) ||
+                   new Date(b.created_at) - new Date(a.created_at);
+          });
+        return { success: true, data: todos };
+      }
+
       const { data, error } = await supabase
         .from('daily_todos')
         .select('*')
@@ -75,6 +101,14 @@ export const todoService = {
   // Get todos for date range
   async getTodosByDateRange(userId, startDate, endDate) {
     try {
+      if (!isSupabaseConfigured) {
+        const todos = getTodosFromLocal()
+          .filter(t => t.user_id === userId && t.due_date >= startDate && t.due_date <= endDate)
+          .sort((a, b) => new Date(b.due_date) - new Date(a.due_date) ||
+                         (a.is_completed ? 1 : -1) - (b.is_completed ? 1 : -1));
+        return { success: true, data: todos };
+      }
+
       const { data, error } = await supabase
         .from('daily_todos')
         .select('*')
@@ -95,6 +129,13 @@ export const todoService = {
   // Get all todos for a user
   async getAllTodos(userId) {
     try {
+      if (!isSupabaseConfigured) {
+        const todos = getTodosFromLocal()
+          .filter(t => t.user_id === userId)
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        return { success: true, data: todos };
+      }
+
       const { data, error } = await supabase
         .from('daily_todos')
         .select('*')
@@ -112,6 +153,21 @@ export const todoService = {
   // Update todo
   async updateTodo(todoId, updates) {
     try {
+      if (!isSupabaseConfigured) {
+        const todos = getTodosFromLocal();
+        const index = todos.findIndex(t => t.id === todoId);
+        if (index === -1) {
+          return { success: false, error: 'Todo not found' };
+        }
+        todos[index] = {
+          ...todos[index],
+          ...updates,
+          updated_at: new Date().toISOString(),
+        };
+        saveTodosToLocal(todos);
+        return { success: true, data: todos[index] };
+      }
+
       const { data, error } = await supabase
         .from('daily_todos')
         .update({
@@ -132,23 +188,28 @@ export const todoService = {
   // Toggle todo completion
   async toggleTodo(todoId) {
     try {
-      // First get the current state
-      const { data: todo, error: fetchError } = await supabase
-        .from('daily_todos')
-        .select('is_completed')
-        .eq('id', todoId)
-        .single();
+      if (!isSupabaseConfigured) {
+        const todos = getTodosFromLocal();
+        const index = todos.findIndex(t => t.id === todoId);
+        if (index === -1) {
+          return { success: false, error: 'Todo not found' };
+        }
+        todos[index].is_completed = !todos[index].is_completed;
+        todos[index].completed_at = todos[index].is_completed ? new Date().toISOString() : null;
+        todos[index].updated_at = new Date().toISOString();
+        saveTodosToLocal(todos);
+        return { success: true, data: todos[index] };
+      }
 
-      if (fetchError) throw fetchError;
-
-      const isCompleted = !todo.is_completed;
-      const completedAt = isCompleted ? new Date().toISOString() : null;
+      const todos = getTodosFromLocal();
+      const localTodo = todos.find(t => t.id === todoId);
+      const currentState = localTodo ? localTodo.is_completed : undefined;
 
       const { data, error } = await supabase
         .from('daily_todos')
         .update({
-          is_completed: isCompleted,
-          completed_at: completedAt,
+          is_completed: currentState !== undefined ? !currentState : true,
+          completed_at: currentState !== undefined && currentState ? null : new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
         .eq('id', todoId)
@@ -165,6 +226,12 @@ export const todoService = {
   // Delete todo
   async deleteTodo(todoId) {
     try {
+      if (!isSupabaseConfigured) {
+        const todos = getTodosFromLocal().filter(t => t.id !== todoId);
+        saveTodosToLocal(todos);
+        return { success: true };
+      }
+
       const { error } = await supabase
         .from('daily_todos')
         .delete()
@@ -181,18 +248,26 @@ export const todoService = {
   // Get todo statistics
   async getTodoStats(userId, startDate, endDate) {
     try {
-      const { data, error } = await supabase
-        .from('daily_todos')
-        .select('*')
-        .eq('user_id', userId)
-        .gte('due_date', startDate)
-        .lte('due_date', endDate);
+      let todos;
 
-      if (error) throw error;
+      if (!isSupabaseConfigured) {
+        todos = getTodosFromLocal()
+          .filter(t => t.user_id === userId && t.due_date >= startDate && t.due_date <= endDate);
+      } else {
+        const { data, error } = await supabase
+          .from('daily_todos')
+          .select('*')
+          .eq('user_id', userId)
+          .gte('due_date', startDate)
+          .lte('due_date', endDate);
 
-      const total = data.length;
-      const completed = data.filter((t) => t.is_completed).length;
-      const pending = data.filter((t) => !t.is_completed).length;
+        if (error) throw error;
+        todos = data;
+      }
+
+      const total = todos.length;
+      const completed = todos.filter((t) => t.is_completed).length;
+      const pending = todos.filter((t) => !t.is_completed).length;
       const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
       return {
@@ -238,3 +313,4 @@ export const todoService = {
     );
   },
 };
+

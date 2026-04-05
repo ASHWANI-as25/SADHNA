@@ -4,6 +4,7 @@ import { ArrowLeft, Moon, Sun, Bell, Volume2, Code, Lock, Download, Trash2, Data
 import { motion } from 'framer-motion';
 import { useInterview } from '../context/InterviewContext';
 import { downloadCSVHistory } from '../services/pdfExport';
+import { toast } from '../services/toastService';
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ const Settings = () => {
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [activeTab, setActiveTab] = useState('general');
   const [isChanged, setIsChanged] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [savedNotification, setSavedNotification] = useState(false);
 
   const [settings, setSettings] = useState(() => {
@@ -40,48 +42,79 @@ const Settings = () => {
     setIsChanged(true);
   };
 
-  const saveSettings = () => {
-    localStorage.setItem('interview_settings', JSON.stringify(settings));
-    setIsChanged(false);
-    setSavedNotification(true);
-    setTimeout(() => setSavedNotification(false), 3000);
+  const saveSettings = async () => {
+    setIsSaving(true);
+    try {
+      localStorage.setItem('interview_settings', JSON.stringify(settings));
+      setIsChanged(false);
+      setSavedNotification(true);
+      toast.success('✅ Settings saved successfully!');
+      setTimeout(() => setSavedNotification(false), 3000);
+    } catch (error) {
+      toast.error('Failed to save settings');
+      console.error('Error saving settings:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const resetSettings = () => {
-    const defaultSettings = {
-      darkMode: true,
-      soundEnabled: true,
-      notificationsEnabled: true,
-      showHints: true,
-      keyboardShortcutsEnabled: true,
-      realTimeTranscription: false,
-      webcamRecording: false,
-      theme: 'dark',
-      fontSize: 'medium',
-      codeFont: 'monospace',
-      autoSaveCode: true,
-      privacyMode: false,
-      dataRetention: '90',
-      autoStartRecording: true,
-      defaultDifficulty: 'Medium',
-      feedbackVerbosity: 'detailed'
-    };
-    setSettings(defaultSettings);
-    localStorage.setItem('interview_settings', JSON.stringify(defaultSettings));
-    setIsChanged(false);
-    setSavedNotification(true);
-    setTimeout(() => setSavedNotification(false), 3000);
+  const resetSettings = async () => {
+    if (!window.confirm('Reset all settings to defaults?')) return;
+    
+    setIsSaving(true);
+    try {
+      const defaultSettings = {
+        darkMode: true,
+        soundEnabled: true,
+        notificationsEnabled: true,
+        showHints: true,
+        keyboardShortcutsEnabled: true,
+        realTimeTranscription: false,
+        webcamRecording: false,
+        theme: 'dark',
+        fontSize: 'medium',
+        codeFont: 'monospace',
+        autoSaveCode: true,
+        privacyMode: false,
+        dataRetention: '90',
+        autoStartRecording: true,
+        defaultDifficulty: 'Medium',
+        feedbackVerbosity: 'detailed'
+      };
+      setSettings(defaultSettings);
+      localStorage.setItem('interview_settings', JSON.stringify(defaultSettings));
+      setIsChanged(false);
+      toast.success('✅ Settings reset to defaults');
+    } catch (error) {
+      toast.error('Failed to reset settings');
+      console.error('Error resetting settings:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const clearHistory = () => {
     if (window.confirm('Are you sure? This action cannot be undone.')) {
-      localStorage.removeItem('interview_history');
-      window.location.reload();
+      try {
+        localStorage.removeItem('interview_history');
+        toast.success('✅ Interview history cleared');
+        // Reload after a short delay to allow toast to display
+        setTimeout(() => window.location.reload(), 1000);
+      } catch (error) {
+        toast.error('Failed to clear history');
+        console.error('Error clearing history:', error);
+      }
     }
   };
 
   const exportData = () => {
-    downloadCSVHistory(history);
+    try {
+      downloadCSVHistory(history);
+      toast.success('✅ Interview history exported as CSV');
+    } catch (error) {
+      toast.error('Failed to export data');
+      console.error('Error exporting data:', error);
+    }
   };
 
   const SettingToggle = ({ label, value, onChange, icons: [IconOff, IconOn] }) => (
@@ -425,18 +458,18 @@ const Settings = () => {
             Reset to Defaults
           </motion.button>
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: !isChanged || isSaving ? 1 : 1.05 }}
+            whileTap={{ scale: !isChanged || isSaving ? 1 : 0.95 }}
             onClick={saveSettings}
-            disabled={!isChanged}
+            disabled={!isChanged || isSaving}
             className={`px-6 py-3 rounded-lg font-medium flex items-center gap-2 transition-all ${
-              isChanged
+              isChanged && !isSaving
                 ? 'bg-accent text-white hover:shadow-lg'
                 : 'bg-gray-600 text-gray-400 cursor-not-allowed'
             }`}
           >
             <Save size={16} />
-            Save Settings
+            {isSaving ? 'Saving...' : 'Save Settings'}
           </motion.button>
         </div>
 

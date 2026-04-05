@@ -4,6 +4,7 @@ import { ArrowRight, BarChart3, TrendingUp, Award, Clock, Download, Moon, Sun, Z
 import { motion } from 'framer-motion';
 import { useInterview } from '../context/InterviewContext';
 import { downloadCSVHistory } from '../services/pdfExport';
+import EmptyState from '../components/EmptyState';
 import { 
   calculateDetailedStats, 
   getRoleBreakdown, 
@@ -128,12 +129,13 @@ const Analytics = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
         {!stats ? (
-          <div className="flex flex-col items-center justify-center py-12">
-            <BarChart3 size={48} className="text-gray-400 mb-4" />
-            <p className={`text-lg ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              No interview history yet. Take your first interview!
-            </p>
-          </div>
+          <EmptyState
+            icon={BarChart3}
+            title="No Interview History Yet"
+            description="Start your first mock interview to see detailed performance analytics and insights."
+            action={() => navigate('/dashboard/setup')}
+            actionText="Take First Interview"
+          />
         ) : (
           <>
             {/* Time Period Filters */}

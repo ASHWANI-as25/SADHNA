@@ -149,7 +149,7 @@ export const milestoneService = {
 
       const newlyAwarded = [];
 
-      for (const milestone of milestones) {
+      for (const milestone of milestones || []) {
         if (currentStreakDays >= milestone.days_required) {
           if (!isSupabaseConfigured) {
             const allMilestones = getMilestonesFromLocal();
@@ -166,14 +166,15 @@ export const milestoneService = {
               .update({
                 is_achieved: true,
                 achieved_date: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            })
-            .eq('id', milestone.id)
-            .select()
-            .single();
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', milestone.id)
+              .select()
+              .single();
 
-          if (error) throw error;
-          newlyAwarded.push(data);
+            if (error) throw error;
+            newlyAwarded.push(data);
+          }
         }
       }
 
@@ -253,12 +254,19 @@ export const milestoneService = {
   // Advanced - Get total milestone count for user
   getUserMilestoneStats: async (userId) => {
     try {
-      const { data, error } = await supabase
-        .from('milestones')
-        .select('is_achieved')
-        .eq('user_id', userId);
+      let data;
+      
+      if (!isSupabaseConfigured) {
+        data = getMilestonesFromLocal().filter(m => m.user_id === userId);
+      } else {
+        const { data: dbData, error } = await supabase
+          .from('milestones')
+          .select('is_achieved')
+          .eq('user_id', userId);
 
-      if (error) throw error;
+        if (error) throw error;
+        data = dbData;
+      }
 
       const totalMilestones = data.length;
       const achievedMilestones = data.filter((m) => m.is_achieved).length;
