@@ -118,14 +118,16 @@ const Streaks = () => {
       return;
     }
 
-    const urlError = validate.url(newStreakData.url);
-    if (urlError) {
-      toast.error(urlError);
-      return;
-    }
-
     try {
-      const result = await streakManagementService.createStreak(user.id, newStreakData);
+      // Normalize URL - auto-prepend https:// if missing
+      const normalizedUrl = newStreakData.url.trim()
+        ? newStreakData.url.trim().match(/^https?:\/\//)
+          ? newStreakData.url.trim()
+          : `https://${newStreakData.url.trim()}`
+        : '';
+      
+      const streakDataToSave = { ...newStreakData, url: normalizedUrl };
+      const result = await streakManagementService.createStreak(user.id, streakDataToSave);
       if (result.success) {
         // Initialize milestones
         await milestoneService.initializeMilestones(result.data.id, user.id);
@@ -434,14 +436,17 @@ const Streaks = () => {
                   URL (Optional)
                 </label>
                 <input
-                  type="url"
+                  type="text"
                   value={newStreakData.url}
                   onChange={(e) =>
                     setNewStreakData({ ...newStreakData, url: e.target.value })
                   }
-                  placeholder="Related website or resource"
+                  placeholder="e.g., leetcode.com, github.com/username"
                   className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/30 transition-all"
                 />
+                <p className="text-xs text-slate-500 mt-1">
+                  💡 Enter any URL — https:// will be added automatically if missing
+                </p>
               </div>
 
               {/* Buttons */}

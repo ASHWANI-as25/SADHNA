@@ -69,15 +69,33 @@ export const habitPredictionService = {
           : 0;
 
       // Calculate trend
-      const isImproving = recentCompletionRate >= completionRate;
+      const isImproving = totalCheckins >= 3 
+        ? recentCompletionRate >= completionRate 
+        : true; // New streaks are always "improving"
       const momentum = streak.current_streak || 0;
 
-      // Predictive score (0-100)
+      // Predictive score (0-100) — FIXED formula
       let successScore = 0;
-      successScore += Math.min(completionRate, 100) * 0.3; // Historical completion rate
-      successScore += Math.min(recentCompletionRate, 100) * 0.3; // Recent performance
-      successScore += Math.min(momentum * 5, 100) * 0.2; // Current streak momentum
-      successScore += (isImproving ? 20 : 0) * 0.2; // Trend
+
+      if (totalCheckins === 0) {
+        // Brand new streak — start at 50% to encourage user
+        successScore = 50;
+      } else {
+        // Historical completion rate (40% weight)
+        successScore += (completionRate / 100) * 40;
+        
+        // Recent 7-day performance (35% weight)
+        successScore += (recentCompletionRate / 100) * 35;
+        
+        // Streak momentum bonus (15% weight) — capped at 30 days
+        const momentumScore = Math.min(momentum / 30, 1) * 15;
+        successScore += momentumScore;
+        
+        // Trend bonus (10% weight)
+        successScore += isImproving ? 10 : 0;
+      }
+
+      successScore = Math.min(100, Math.round(successScore));
 
       // Risk assessment
       let riskLevel = 'Low';
@@ -144,13 +162,21 @@ export const habitPredictionService = {
   // Get personalized habit suggestions
   getPersonalizedSuggestions: async (userId) => {
     try {
-      // Get all user streaks
-      const { data: streaks, error: streaksError } = await supabase
-        .from('streaks')
-        .select('*')
-        .eq('user_id', userId);
+      let streaks;
+      
+      if (!isSupabaseConfigured) {
+        // Use localStorage fallback
+        const allStreaks = getStreaksFromLocal();
+        streaks = allStreaks.filter(s => s.user_id === userId);
+      } else {
+        const { data, error: streaksError } = await supabase
+          .from('streaks')
+          .select('*')
+          .eq('user_id', userId);
 
-      if (streaksError) throw streaksError;
+        if (streaksError) throw streaksError;
+        streaks = data;
+      }
 
       const suggestions = [];
 
@@ -228,13 +254,21 @@ export const habitPredictionService = {
   // Get performance trend analysis
   getPerformanceTrends: async (streakId) => {
     try {
-      const { data: checkins, error } = await supabase
-        .from('checkins')
-        .select('*')
-        .eq('streak_id', streakId)
-        .order('checkin_date', { ascending: true });
+      let checkins;
+      
+      if (!isSupabaseConfigured) {
+        // Use localStorage fallback
+        checkins = getCheckinsFromLocal().filter(c => c.streak_id === streakId);
+      } else {
+        const { data, error } = await supabase
+          .from('checkins')
+          .select('*')
+          .eq('streak_id', streakId)
+          .order('checkin_date', { ascending: true });
 
-      if (error) throw error;
+        if (error) throw error;
+        checkins = data;
+      }
 
       // Analyze trends by week
       const weeklyData = {};
@@ -292,27 +326,46 @@ export const habitPredictionService = {
   // Get smart reminder suggestions
   getSmartReminders: async (userId) => {
     try {
-      const { data: streaks, error: streaksError } = await supabase
-        .from('streaks')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('is_active', true);
+      let streaks;
+      
+      if (!isSupabaseConfigured) {
+        // Use localStorage fallback
+        const allStreaks = getStreaksFromLocal();
+        streaks = allStreaks.filter(s => s.user_id === userId && s.is_active);
+      } else {
+        const { data, error: streaksError } = await supabase
+          .from('streaks')
+          .select('*')
+          .eq('user_id', userId)
+          .eq('is_active', true);
 
-      if (streaksError) throw streaksError;
+        if (streaksError) throw streaksError;
+        streaks = data;
+      }
 
       const reminders = [];
       const today = new Date().toISOString().split('T')[0];
 
       for (const streak of streaks) {
-        // Check if user has checked in today
-        const { data: todaysCheckin } = await supabase
-          .from('checkins')
-          .select('*')
-          .eq('streak_id', streak.id)
-          .eq('checkin_date', today)
-          .single();
+        let hasCheckedInToday = false;
+        
+        if (!isSupabaseConfigured) {
+          // Check localStorage
+          const allCheckins = getCheckinsFromLocal();
+          hasCheckedInToday = allCheckins.some(c => c.streak_id === streak.id && c.checkin_date === today);
+        } else {
+          // Check Supabase
+          const { data: todaysCheckin } = await supabase
+            .from('checkins')
+            .select('*')
+            .eq('streak_id', streak.id)
+            .eq('checkin_date', today)
+            .single();
 
-        if (!todaysCheckin) {
+          hasCheckedInToday = !!todaysCheckin;
+        }
+
+        if (!hasCheckedInToday) {
           reminders.push({
             streakId: streak.id,
             streakTitle: streak.title,

@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trash2, Edit2, CheckCircle2, AlertCircle, TrendingUp, Calendar } from 'lucide-react';
+import { Trash2, Edit2, CheckCircle2, AlertCircle, TrendingUp, Calendar, ExternalLink } from 'lucide-react';
 import { streakManagementService } from '../services/streakManagementService';
 import { checkinService } from '../services/checkinService';
 import { milestoneService } from '../services/milestoneService';
 import { habitPredictionService } from '../services/habitPredictionService';
+import { toast } from '../services/toastService';
 import GlowButton from './GlowButton';
 import '../styles/streaks.css';
 
@@ -29,6 +30,8 @@ const StreakCard = ({ streak, userId, onUpdate }) => {
   const [nextMilestone, setNextMilestone] = useState(null);
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editData, setEditData] = useState({ title: streak.title, description: streak.description, url: streak.url || '' });
 
   // Memoize category emoji for performance
   const categoryEmoji = useMemo(() => CATEGORY_EMOJI[streak.category] || '⭐', [streak.category]);
@@ -84,11 +87,18 @@ const StreakCard = ({ streak, userId, onUpdate }) => {
       await milestoneService.checkAndAwardMilestones(streak.id, consecutiveDays);
 
       setCheckedInToday(true);
+      toast.success(`🔥 Checked in! Keep the streak alive!`);
       
       // Reload data with slight delay to ensure localStorage is updated
       setTimeout(() => {
         onUpdate();
       }, 100);
+    } else {
+      if (result.error?.includes('duplicate') || result.error?.includes('already')) {
+        toast.info('Already checked in today! Come back tomorrow 💪');
+      } else {
+        toast.error('Check-in failed. Please try again.');
+      }
     }
   }, [streak.id, streak.best_streak, streak.total_checkins, userId, onUpdate]);
 
@@ -100,6 +110,26 @@ const StreakCard = ({ streak, userId, onUpdate }) => {
       }
     }
   }, [streak.id, streak.title, onUpdate]);
+
+  const handleEdit = useCallback(async () => {
+    const normalizedUrl = editData.url.trim()
+      ? editData.url.match(/^https?:\/\//) ? editData.url : `https://${editData.url}`
+      : '';
+    
+    const result = await streakManagementService.updateStreak(streak.id, {
+      title: editData.title,
+      description: editData.description,
+      url: normalizedUrl,
+    });
+    
+    if (result.success) {
+      toast.success('Streak updated!');
+      setShowEditModal(false);
+      onUpdate();
+    } else {
+      toast.error('Failed to update streak');
+    }
+  }, [editData, streak.id, onUpdate]);
 
   const streakColor = useMemo(() => {
     if (streak.current_streak >= 30) return 'from-purple-500 to-pink-500';
@@ -134,11 +164,26 @@ const StreakCard = ({ streak, userId, onUpdate }) => {
               <span className="text-base mr-2">{categoryEmoji}</span>
               {streak.category || 'General'}
             </p>
+            {streak.url && (
+              <a
+                href={streak.url.startsWith('http') ? streak.url : `https://${streak.url}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-cyan-400 hover:text-cyan-300 
+                           bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 
+                           px-3 py-1.5 rounded-full transition-all duration-200 mt-2 group"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ExternalLink size={12} className="group-hover:scale-110 transition-transform" />
+                Open Resource
+              </a>
+            )}
           </div>
           <div className="flex gap-2">
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => setShowEditModal(true)}
               className="p-2 rounded-lg bg-slate-700 hover:bg-slate-600 transition-colors text-slate-300"
             >
               <Edit2 size={16} />
@@ -183,8 +228,24 @@ const StreakCard = ({ streak, userId, onUpdate }) => {
               <span className={`text-sm font-semibold ${successColor}`}>
                 Success: {prediction.successScore}%
               </span>
+              {prediction.completionRate > 0 && (
+                <span className="text-xs text-slate-500">
+                  ({prediction.completionRate}% check-in rate)
+                </span>
+              )}
             </div>
-            {prediction.isImproving && <span className="text-xs text-green-400">📈 Improving</span>}
+            <div className="flex items-center gap-2">
+              {prediction.isImproving && (
+                <span className="text-xs text-green-400 flex items-center gap-1">
+                  📈 Improving
+                </span>
+              )}
+              {!prediction.isImproving && prediction.completionRate > 0 && (
+                <span className="text-xs text-yellow-400 flex items-center gap-1">
+                  📊 Stable
+                </span>
+              )}
+            </div>
           </div>
         )}
 
@@ -226,6 +287,21 @@ const StreakCard = ({ streak, userId, onUpdate }) => {
               <span className="text-sm font-semibold">Checked In Today!</span>
             </div>
           )}
+          {/* URL Open button shown next to check-in when URL exists */}
+          {streak.url && (
+            <a
+              href={streak.url.startsWith('http') ? streak.url : `https://${streak.url}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/40 
+                         rounded-lg text-blue-300 hover:text-blue-200 transition-all duration-200
+                         flex items-center gap-1.5 text-sm font-medium"
+              title={`Open: ${streak.url}`}
+            >
+              <ExternalLink size={14} />
+              Go
+            </a>
+          )}
         </div>
 
         {/* Expand Button */}
@@ -245,6 +321,22 @@ const StreakCard = ({ streak, userId, onUpdate }) => {
               exit={{ height: 0, opacity: 0 }}
               className="mt-4 pt-4 border-t border-slate-700 space-y-3"
             >
+              {streak.url && (
+                <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                  <p className="text-xs text-slate-400 mb-2 font-semibold">🔗 Resource Link</p>
+                  <a
+                    href={streak.url.startsWith('http') ? streak.url : `https://${streak.url}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-400 hover:text-blue-300 break-all 
+                               flex items-center gap-2 hover:underline"
+                  >
+                    <ExternalLink size={12} className="flex-shrink-0" />
+                    {streak.url}
+                  </a>
+                </div>
+              )}
+
               {prediction && (
                 <div className="space-y-2">
                   <h4 className="text-sm font-bold text-slate-300">Health Assessment</h4>
@@ -279,6 +371,42 @@ const StreakCard = ({ streak, userId, onUpdate }) => {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Edit Modal */}
+        {showEditModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={() => setShowEditModal(false)}>
+            <div className="bg-slate-800 border border-slate-600 rounded-xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+              <h3 className="text-xl font-bold text-white mb-4">Edit Streak</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm text-slate-300 mb-1 block">Name</label>
+                  <input type="text" value={editData.title}
+                    onChange={e => setEditData({...editData, title: e.target.value})}
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-cyan-500" />
+                </div>
+                <div>
+                  <label className="text-sm text-slate-300 mb-1 block">Description</label>
+                  <textarea value={editData.description}
+                    onChange={e => setEditData({...editData, description: e.target.value})}
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-cyan-500 h-20 resize-none" />
+                </div>
+                <div>
+                  <label className="text-sm text-slate-300 mb-1 block">URL</label>
+                  <input type="text" value={editData.url}
+                    onChange={e => setEditData({...editData, url: e.target.value})}
+                    placeholder="e.g., leetcode.com"
+                    className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-cyan-500" />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button onClick={() => setShowEditModal(false)}
+                    className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors">Cancel</button>
+                  <button onClick={handleEdit}
+                    className="flex-1 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg font-semibold transition-colors">Save</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </motion.div>
   );
