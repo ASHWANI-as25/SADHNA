@@ -8,6 +8,7 @@ import { streakService } from '../services/streakService';
 import { streakManagementService } from '../services/streakManagementService';
 import { motivationService } from '../services/motivationService';
 import { fullscreenService } from '../services/fullscreenService';
+import { toast } from '../services/toastService';
 import FloatingCard from '../components/FloatingCard';
 import GlowButton from '../components/GlowButton';
 
@@ -468,7 +469,13 @@ const Dashboard = () => {
                         onClick={(e) => {
                           e.stopPropagation();
                           if (window.confirm('Delete this session record?')) {
-                            deleteHistoryItem(item.id);
+                            try {
+                              deleteHistoryItem(item.id);
+                              toast.success('🗑️ Interview record deleted');
+                            } catch (err) {
+                              console.error('Error deleting interview:', err);
+                              toast.error('Failed to delete. Try again.');
+                            }
                           }
                         }}
                         className="p-2 hover:text-energy-coral hover:bg-energy-coral/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"

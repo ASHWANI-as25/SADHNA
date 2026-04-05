@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Flame, BarChart3, Zap, User, Settings, LogOut, Menu, X, ChevronRight, BookOpen, Calendar } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -9,6 +9,29 @@ const SidebarNavigation = () => {
   const location = useLocation();
   const { user, userProfile, logout } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState(null);
+
+  // Load display name and avatar from localStorage for OAuth users
+  useEffect(() => {
+    if (user?.id) {
+      const oauthName = localStorage.getItem(`oauth_name_${user.id}`);
+      const oauthEmail = localStorage.getItem(`oauth_email_${user.id}`);
+      const saved = localStorage.getItem(`user_avatar_${user.id}`);
+      
+      setDisplayName(
+        oauthName || 
+        userProfile?.fullName || 
+        oauthEmail?.split('@')[0] || 
+        user?.email?.split('@')[0] || 
+        'User'
+      );
+      
+      if (saved) {
+        setAvatarUrl(saved);
+      }
+    }
+  }, [user?.id, userProfile]);
 
   // Fixed active state detection - dashboard only matches exact path
   const isActive = (path) => {
@@ -75,12 +98,21 @@ const SidebarNavigation = () => {
         <div className="sidebar-profile">
           <div className="profile-avatar">
             <div className="avatar-glow" />
-            <div className="avatar-placeholder">
-              {userProfile?.fullName?.charAt(0).toUpperCase() || 'U'}
-            </div>
+            {avatarUrl ? (
+              <img 
+                src={avatarUrl} 
+                alt={displayName}
+                className="w-full h-full object-cover rounded-full"
+                onError={() => setAvatarUrl(null)}
+              />
+            ) : (
+              <div className="avatar-placeholder">
+                {displayName?.charAt(0)?.toUpperCase() || 'U'}
+              </div>
+            )}
           </div>
           <div className="profile-info">
-            <p className="profile-name">{userProfile?.fullName || user?.email?.split('@')[0] || 'User'}</p>
+            <p className="profile-name">{displayName}</p>
             <p className="profile-email">{user?.email}</p>
           </div>
         </div>

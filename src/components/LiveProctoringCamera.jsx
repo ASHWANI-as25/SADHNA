@@ -315,6 +315,18 @@ const LiveProctoringCamera = ({ isInterviewActive = true, onWarning = null, onTe
         console.error('❌ Camera error:', err);
         setHasPermission(false);
         setError(err.message);
+        
+        // Handle specific camera permission errors
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          console.warn('Camera/mic access denied by user');
+          setError('Camera access denied. Interview continues without video.');
+          // Do NOT crash — allow interview to continue
+          return;
+        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+          console.warn('Camera/mic not found');
+          setError('Camera unavailable. Continuing without video.');
+          return;
+        }
       }
     };
 
